@@ -123,52 +123,73 @@ export default function HomePage() {
         <div className="absolute right-40 top-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-2xl pointer-events-none" />
       </section>
 
-      {/* Metrics Row */}
-      <section className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <Link
-          to="/lessons"
-          className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs space-y-1 hover:border-brand-300 transition group block"
-        >
-          <div className="flex items-center justify-between text-slate-400 group-hover:text-brand-600">
-            <span className="text-[11px] font-bold uppercase tracking-wider">Total Lessons</span>
-            <BookOpen className="w-4 h-4 text-brand-500" />
-          </div>
-          <div className="text-2xl font-black text-slate-900">{lessons.length}</div>
-          <p className="text-[11px] text-slate-500">Spoken dialogues & guides</p>
-        </Link>
+      {/* Dynamic Category Cards Row */}
+      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {categories.map((cat) => (
+          <Link
+            key={cat.id}
+            to={`/lessons?category=${cat.slug}`}
+            className="bg-white p-5 rounded-3xl border border-slate-200/90 shadow-2xs space-y-3 hover:border-brand-500 hover:shadow-md transition-all group flex flex-col justify-between"
+          >
+            <div className="space-y-2.5">
+              <div className="flex items-center justify-between">
+                <div className="w-10 h-10 rounded-2xl bg-brand-50 text-brand-700 flex items-center justify-center text-xl group-hover:scale-110 transition-transform">
+                  {cat.icon || '📚'}
+                </div>
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 group-hover:bg-brand-100 group-hover:text-brand-800 transition-colors">
+                  {cat.lessons_count ?? 0} {cat.lessons_count === 1 ? 'Lesson' : 'Lessons'}
+                </span>
+              </div>
 
-        <Link
-          to="/lessons"
-          className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs space-y-1 hover:border-indigo-300 transition group block"
-        >
-          <div className="flex items-center justify-between text-slate-400 group-hover:text-indigo-600">
-            <span className="text-[11px] font-bold uppercase tracking-wider">Categories</span>
-            <Layers className="w-4 h-4 text-indigo-500" />
-          </div>
-          <div className="text-2xl font-black text-slate-900">{categories.length}</div>
-          <p className="text-[11px] text-slate-500">Structured learning modules</p>
-        </Link>
+              <div>
+                <h3 className="text-sm sm:text-base font-bold text-slate-900 group-hover:text-brand-600 transition-colors line-clamp-1">
+                  {cat.name}
+                </h3>
+                <p className="text-xs text-slate-500 line-clamp-2 mt-1 leading-relaxed">
+                  {cat.description || 'Interactive speaking lessons and practice material.'}
+                </p>
+              </div>
+            </div>
 
-        <Link
-          to="/notes"
-          className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs space-y-1 hover:border-amber-300 transition group block"
-        >
-          <div className="flex items-center justify-between text-slate-400 group-hover:text-amber-600">
-            <span className="text-[11px] font-bold uppercase tracking-wider">My Notes</span>
-            <FileText className="w-4 h-4 text-amber-500" />
-          </div>
-          <div className="text-2xl font-black text-slate-900">{notesCount}</div>
-          <p className="text-[11px] text-slate-500">Personal vocabulary rules</p>
-        </Link>
+            <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-brand-600">
+              <span>Explore Category</span>
+              <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+            </div>
+          </Link>
+        ))}
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs space-y-1">
-          <div className="flex items-center justify-between text-slate-400">
-            <span className="text-[11px] font-bold uppercase tracking-wider">AI Tutor</span>
-            <Sparkles className="w-4 h-4 text-brand-500" />
-          </div>
-          <div className="text-2xl font-black text-emerald-600">Online</div>
-          <p className="text-[11px] text-slate-500">Ask Akib Sir 24/7</p>
-        </div>
+        {/* My Study Notes Card */}
+        {currentUser && (
+          <Link
+            to="/notes"
+            className="bg-white p-5 rounded-3xl border border-slate-200/90 shadow-2xs space-y-3 hover:border-amber-400 hover:shadow-md transition-all group flex flex-col justify-between"
+          >
+            <div className="space-y-2.5">
+              <div className="flex items-center justify-between">
+                <div className="w-10 h-10 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center text-xl group-hover:scale-110 transition-transform">
+                  📝
+                </div>
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700">
+                  {notesCount} {notesCount === 1 ? 'Note' : 'Notes'}
+                </span>
+              </div>
+
+              <div>
+                <h3 className="text-sm sm:text-base font-bold text-slate-900 group-hover:text-amber-600 transition-colors line-clamp-1">
+                  My Study Notes
+                </h3>
+                <p className="text-xs text-slate-500 line-clamp-2 mt-1 leading-relaxed">
+                  Personal vocabulary rules, phrases, and saved revisions.
+                </p>
+              </div>
+            </div>
+
+            <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-amber-600">
+              <span>Open Notes</span>
+              <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+            </div>
+          </Link>
+        )}
       </section>
 
       {/* Main Learning Hub Section */}
