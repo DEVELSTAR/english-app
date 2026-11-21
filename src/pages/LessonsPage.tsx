@@ -72,25 +72,6 @@ export default function LessonsPage() {
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-      {/* Category Indicator (when filtered) */}
-      {activeCategory && (
-        <div className="flex items-center justify-between text-xs text-slate-500 bg-white px-4 py-2.5 rounded-2xl border border-slate-200/80 shadow-2xs">
-          <div className="flex items-center gap-2 font-bold text-slate-900">
-            <span className="text-lg">{activeCategory.icon || '📚'}</span>
-            <span>{activeCategory.name}</span>
-            <span className="text-[10px] px-2 py-0.5 rounded-full bg-brand-50 text-brand-700 font-bold border border-brand-100">
-              {filtered.length} {filtered.length === 1 ? 'lesson' : 'lessons'}
-            </span>
-          </div>
-          <Link
-            to="/lessons"
-            className="text-brand-600 hover:text-brand-700 font-bold text-xs"
-          >
-            Show All
-          </Link>
-        </div>
-      )}
-
       {/* Sleek Search Bar */}
       <div className="relative w-full">
         <input
