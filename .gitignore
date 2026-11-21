@@ -1,0 +1,28 @@
+# Dependencies
+node_modules
+dist-ssr
+*.local
+
+# Environment variables & secrets
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# System & OS
+.DS_Store
+Thumbs.db
+
+# Local development & workspace notes (keep on local machine only)
+.agents/
+to-do.md
+schema.md
+schema.sql
+supabase_dump.sql
+scripts/
+DEPLOYMENT.md
