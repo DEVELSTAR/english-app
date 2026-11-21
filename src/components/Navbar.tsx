@@ -58,18 +58,11 @@ export default function Navbar() {
       iconColor: 'bg-indigo-50 text-indigo-600',
     },
     {
-      name: 'Daily Classes',
+      name: 'Lessons',
       path: '/lessons',
       icon: BookOpen,
-      description: 'Daily speaking & vocabulary',
+      description: 'Classes, grammar & vocabulary',
       iconColor: 'bg-emerald-50 text-emerald-600',
-    },
-    {
-      name: 'Foundations',
-      path: '/topics',
-      icon: Layers,
-      description: 'Grammar rules & concepts',
-      iconColor: 'bg-amber-50 text-amber-600',
     },
     {
       name: 'My Notes',

@@ -2,20 +2,16 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
-import { Lesson, LessonCompletion, Note } from '../types/database';
+import { Lesson, Category } from '../types/database';
 import {
   Sparkles,
   BookOpen,
   ArrowRight,
   Layers,
   FileText,
-  CheckCircle2,
-  RotateCcw,
   Search,
   Loader2,
   Calendar,
-  Flame,
-  Award,
 } from 'lucide-react';
 
 export default function HomePage() {
@@ -25,12 +21,11 @@ export default function HomePage() {
   if (!isAuthLoading && currentUser && isAdmin) {
     return <Navigate to="/admin" replace />;
   }
-  const [dailyClasses, setDailyClasses] = useState<Lesson[]>([]);
-  const [topics, setTopics] = useState<Lesson[]>([]);
+
+  const [lessons, setLessons] = useState<Lesson[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [notesCount, setNotesCount] = useState(0);
-  const [pendingSharesCount, setPendingSharesCount] = useState(0);
-  const [completions, setCompletions] = useState<Record<number, LessonCompletion>>({});
-  const [activeTab, setActiveTab] = useState<'classes' | 'topics' | 'revision' | 'completed'>('classes');
+  const [selectedCategorySlug, setSelectedCategorySlug] = useState<string>('all');
   const [search, setSearch] = useState('');
   const [isLoading, setIsLoading] = useState(true);
 
@@ -38,27 +33,25 @@ export default function HomePage() {
     async function loadData() {
       setIsLoading(true);
       try {
-        const [classes, top] = await Promise.all([
-          api.getLessons({ lesson_type: 0, status: 1 }),
-          api.getLessons({ lesson_type: 1, status: 1 }),
+        const [allLessons, categoriesList] = await Promise.all([
+          api.getLessons({ status: 1 }),
+          api.getCategories(),
         ]);
-        setDailyClasses(classes);
-        setTopics(top);
+        setLessons(allLessons);
+        setCategories(categoriesList);
 
         if (currentUser) {
           try {
-            const [notes, shares] = await Promise.all([
+            const [notes] = await Promise.all([
               api.getNotes(),
-              api.getPendingShares(),
             ]);
             setNotesCount(notes.length);
-            setPendingSharesCount(shares.length);
           } catch {
             // ignore
           }
         }
       } catch (err) {
-        console.error(err);
+        console.error('Failed to load dashboard data:', err);
       } finally {
         setIsLoading(false);
       }
@@ -66,28 +59,28 @@ export default function HomePage() {
     loadData();
   }, [currentUser]);
 
-  const allLessons = useMemo(() => [...dailyClasses, ...topics], [dailyClasses, topics]);
-
   const filteredList = useMemo(() => {
-    let list: Lesson[] = [];
-    if (activeTab === 'classes') list = dailyClasses;
-    else if (activeTab === 'topics') list = topics;
-    else if (activeTab === 'completed') {
-      list = allLessons.filter((l) => completions[l.id]?.completed);
-    } else if (activeTab === 'revision') {
-      list = allLessons.filter((l) => completions[l.id]?.needs_revision);
+    let list = lessons;
+
+    if (selectedCategorySlug !== 'all') {
+      list = list.filter((l) => l.category?.slug === selectedCategorySlug);
     }
 
-    if (!search.trim()) return list;
-    return list.filter(
-      (l) =>
-        l.title.toLowerCase().includes(search.toLowerCase()) ||
-        (l.topic && l.topic.toLowerCase().includes(search.toLowerCase()))
-    );
-  }, [activeTab, dailyClasses, topics, allLessons, completions, search]);
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      list = list.filter(
+        (l) =>
+          l.title.toLowerCase().includes(q) ||
+          (l.topic && l.topic.toLowerCase().includes(q)) ||
+          (l.category?.name && l.category.name.toLowerCase().includes(q))
+      );
+    }
+
+    return list;
+  }, [lessons, selectedCategorySlug, search]);
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-8">
       {/* Hero Welcome Banner */}
       <section className="relative overflow-hidden rounded-3xl bg-gradient-to-tr from-brand-900 via-indigo-900 to-slate-900 text-white p-8 sm:p-12 shadow-xl shadow-brand-900/10">
         <div className="relative z-10 max-w-2xl space-y-4">
@@ -104,7 +97,7 @@ export default function HomePage() {
           </h1>
 
           <p className="text-sm sm:text-base text-slate-300 leading-relaxed">
-            Stop translating word-by-word from Hindi. Practice practical daily conversations with our AI Tutor & structured foundational curriculum.
+            Stop translating word-by-word from Hindi. Practice practical daily conversations with our AI Tutor & structured curriculum.
           </p>
 
           <div className="pt-2 flex flex-wrap gap-3">
@@ -113,10 +106,10 @@ export default function HomePage() {
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-brand-500 hover:bg-brand-600 text-white text-xs font-bold shadow-md shadow-brand-500/30 transition cursor-pointer"
             >
               <BookOpen className="w-4 h-4" />
-              <span>Explore Today's Classes</span>
+              <span>Explore All Lessons</span>
             </Link>
             <Link
-              to="/topics"
+              to="/lessons?category=grammar-foundations"
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-white/10 hover:bg-white/15 text-white text-xs font-bold border border-white/20 backdrop-blur-xs transition"
             >
               <Layers className="w-4 h-4" />
@@ -132,32 +125,41 @@ export default function HomePage() {
 
       {/* Metrics Row */}
       <section className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs space-y-1">
-          <div className="flex items-center justify-between text-slate-400">
-            <span className="text-[11px] font-bold uppercase tracking-wider">Daily Classes</span>
+        <Link
+          to="/lessons"
+          className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs space-y-1 hover:border-brand-300 transition group block"
+        >
+          <div className="flex items-center justify-between text-slate-400 group-hover:text-brand-600">
+            <span className="text-[11px] font-bold uppercase tracking-wider">Total Lessons</span>
             <BookOpen className="w-4 h-4 text-brand-500" />
           </div>
-          <div className="text-2xl font-black text-slate-900">{dailyClasses.length}</div>
-          <p className="text-[11px] text-slate-500">Practical everyday dialogues</p>
-        </div>
+          <div className="text-2xl font-black text-slate-900">{lessons.length}</div>
+          <p className="text-[11px] text-slate-500">Spoken dialogues & guides</p>
+        </Link>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs space-y-1">
-          <div className="flex items-center justify-between text-slate-400">
-            <span className="text-[11px] font-bold uppercase tracking-wider">Topics</span>
+        <Link
+          to="/lessons"
+          className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs space-y-1 hover:border-indigo-300 transition group block"
+        >
+          <div className="flex items-center justify-between text-slate-400 group-hover:text-indigo-600">
+            <span className="text-[11px] font-bold uppercase tracking-wider">Categories</span>
             <Layers className="w-4 h-4 text-indigo-500" />
           </div>
-          <div className="text-2xl font-black text-slate-900">{topics.length}</div>
-          <p className="text-[11px] text-slate-500">Core grammar foundations</p>
-        </div>
+          <div className="text-2xl font-black text-slate-900">{categories.length}</div>
+          <p className="text-[11px] text-slate-500">Structured learning modules</p>
+        </Link>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs space-y-1">
-          <div className="flex items-center justify-between text-slate-400">
+        <Link
+          to="/notes"
+          className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs space-y-1 hover:border-amber-300 transition group block"
+        >
+          <div className="flex items-center justify-between text-slate-400 group-hover:text-amber-600">
             <span className="text-[11px] font-bold uppercase tracking-wider">My Notes</span>
             <FileText className="w-4 h-4 text-amber-500" />
           </div>
           <div className="text-2xl font-black text-slate-900">{notesCount}</div>
           <p className="text-[11px] text-slate-500">Personal vocabulary rules</p>
-        </div>
+        </Link>
 
         <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs space-y-1">
           <div className="flex items-center justify-between text-slate-400">
@@ -172,30 +174,35 @@ export default function HomePage() {
       {/* Main Learning Hub Section */}
       <section className="space-y-6">
         <div className="bg-white p-4 sm:p-6 rounded-3xl border border-slate-200/80 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          {/* Tabs */}
-          <div className="flex flex-wrap gap-1 bg-slate-100 p-1 rounded-2xl">
+          {/* Dynamic Category Filter Pills */}
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1">
             <button
               type="button"
-              onClick={() => setActiveTab('classes')}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
-                activeTab === 'classes'
-                  ? 'bg-white text-brand-600 shadow-2xs'
-                  : 'text-slate-600 hover:text-slate-900'
+              onClick={() => setSelectedCategorySlug('all')}
+              className={`shrink-0 px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
+                selectedCategorySlug === 'all'
+                  ? 'bg-brand-600 text-white shadow-2xs'
+                  : 'bg-slate-100 text-slate-600 hover:text-slate-900'
               }`}
             >
-              Daily Classes ({dailyClasses.length})
+              All ({lessons.length})
             </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab('topics')}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
-                activeTab === 'topics'
-                  ? 'bg-white text-indigo-600 shadow-2xs'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              Foundations ({topics.length})
-            </button>
+            {categories.map((cat) => (
+              <button
+                key={cat.id}
+                type="button"
+                onClick={() => setSelectedCategorySlug(cat.slug)}
+                className={`shrink-0 flex items-center gap-1 px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
+                  selectedCategorySlug === cat.slug
+                    ? 'bg-brand-600 text-white shadow-2xs'
+                    : 'bg-slate-100 text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <span>{cat.icon || '📁'}</span>
+                <span>{cat.name}</span>
+                <span className="opacity-75 text-[10px]">({cat.lessons_count ?? 0})</span>
+              </button>
+            ))}
           </div>
 
           {/* Search Bar */}
@@ -220,12 +227,13 @@ export default function HomePage() {
         ) : filteredList.length === 0 ? (
           <div className="bg-white rounded-3xl p-12 text-center text-slate-500 border border-slate-200">
             <p className="font-bold text-sm">No lessons found.</p>
-            <p className="text-xs text-slate-400 mt-1">Try another keyword or switch tabs.</p>
+            <p className="text-xs text-slate-400 mt-1">Try another keyword or switch category.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {filteredList.map((lesson) => {
-              const isTopic = lesson.lesson_type === 1;
+              const catName = lesson.category?.name || lesson.topic || 'Lesson';
+              const catIcon = lesson.category?.icon || '📚';
 
               return (
                 <Link
@@ -234,15 +242,12 @@ export default function HomePage() {
                   className="bg-white rounded-3xl p-6 border border-slate-200/90 shadow-2xs hover:border-brand-500/60 hover:shadow-md transition-all group flex flex-col justify-between"
                 >
                   <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span
-                        className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                          isTopic ? 'bg-indigo-50 text-indigo-700' : 'bg-brand-50 text-brand-700'
-                        }`}
-                      >
-                        {lesson.topic || (isTopic ? 'Topic' : 'Class')}
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-brand-50 text-brand-700 truncate max-w-[180px]">
+                        <span>{catIcon}</span>
+                        <span className="truncate">{catName}</span>
                       </span>
-                      <span className="text-[11px] font-mono text-slate-400 flex items-center gap-1">
+                      <span className="text-[11px] font-mono text-slate-400 flex items-center gap-1 shrink-0">
                         <Calendar className="w-3 h-3" />
                         <span>{lesson.lesson_date}</span>
                       </span>

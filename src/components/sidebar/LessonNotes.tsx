@@ -179,7 +179,7 @@ export default function LessonNotes({ lesson, onNotesCountChange }: LessonNotesP
         <div className="flex items-center gap-2">
           <FileText className="w-4 h-4 text-brand-600" />
           <span className="text-xs font-bold text-slate-800">
-            {lesson.lesson_type === 1 ? 'Topic Notes' : 'Class Notes'}
+            Lesson Notes
           </span>
           <span className="text-[10px] font-mono bg-brand-50 text-brand-700 font-bold px-2 py-0.5 rounded-full border border-brand-200">
             {notes.length}
@@ -210,8 +210,7 @@ export default function LessonNotes({ lesson, onNotesCountChange }: LessonNotesP
             </div>
             <p className="font-bold text-slate-800 text-xs">No notes yet</p>
             <p className="text-[11px] text-slate-500 max-w-xs mx-auto">
-              Write down tricky words, grammar rules, or sentences from this{' '}
-              {lesson.lesson_type === 1 ? 'topic' : 'class'}!
+              Write down tricky words, grammar rules, or sentences from this lesson!
             </p>
           </div>
         ) : (
@@ -375,7 +374,7 @@ export default function LessonNotes({ lesson, onNotesCountChange }: LessonNotesP
             value={newContent}
             onChange={(e) => setNewContent(e.target.value)}
             rows={2}
-            placeholder={`Write a note for this ${lesson.lesson_type === 1 ? 'topic' : 'class'}...`}
+            placeholder="Write a note for this lesson..."
             className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:border-brand-600 focus:ring-1 focus:ring-brand-600 transition resize-none"
           />
 

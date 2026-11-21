@@ -5,62 +5,131 @@ import { requireAuth, requireAdmin } from '../middleware/auth.js';
 const router = Router();
 
 // 1. List Lessons (Public or Authenticated)
-// Supports filters: ?lesson_type=0|1 and ?status=0|1
+// Supports filters: ?category_id=X, ?category=slug, ?lesson_type=0|1, ?status=0|1, ?search=...
 router.get('/', async (req, res) => {
   try {
-    const { lesson_type, status, search } = req.query;
-    let sql = 'SELECT id, title, lesson_date, topic, status, author_id, lesson_type, created_at, updated_at FROM lessons WHERE 1=1';
+    const { category_id, category, lesson_type, status, search } = req.query;
+    let sql = `
+      SELECT l.id, l.title, l.lesson_date, l.topic, l.status, l.author_id, l.lesson_type, l.category_id,
+             l.created_at, l.updated_at,
+             c.name as category_name, c.slug as category_slug, c.icon as category_icon, c.description as category_description
+      FROM lessons l
+      LEFT JOIN categories c ON l.category_id = c.id
+      WHERE 1=1
+    `;
     const params = [];
 
+    if (category_id !== undefined && category_id !== '') {
+      sql += ' AND l.category_id = ?';
+      params.push(parseInt(category_id, 10));
+    } else if (category && category.trim()) {
+      sql += ' AND c.slug = ?';
+      params.push(category.trim());
+    }
+
     if (lesson_type !== undefined && lesson_type !== '') {
-      sql += ' AND lesson_type = ?';
+      sql += ' AND l.lesson_type = ?';
       params.push(parseInt(lesson_type, 10));
     }
 
     if (status !== undefined && status !== '') {
-      sql += ' AND status = ?';
+      sql += ' AND l.status = ?';
       params.push(parseInt(status, 10));
     }
 
     if (search && search.trim()) {
-      sql += ' AND (title LIKE ? OR topic LIKE ?)';
-      params.push(`%${search.trim()}%`, `%${search.trim()}%`);
+      sql += ' AND (l.title LIKE ? OR l.topic LIKE ? OR c.name LIKE ?)';
+      params.push(`%${search.trim()}%`, `%${search.trim()}%`, `%${search.trim()}%`);
     }
 
-    sql += ' ORDER BY lesson_date DESC, id DESC';
+    sql += ' ORDER BY l.lesson_date DESC, l.id DESC';
 
     const [lessons] = await pool.query(sql, params);
-    res.json(lessons);
+    res.json(
+      lessons.map((l) => ({
+        id: l.id,
+        title: l.title,
+        lesson_date: l.lesson_date,
+        topic: l.topic,
+        status: l.status,
+        author_id: l.author_id,
+        lesson_type: l.lesson_type,
+        category_id: l.category_id,
+        created_at: l.created_at,
+        updated_at: l.updated_at,
+        category: l.category_id
+          ? {
+              id: l.category_id,
+              name: l.category_name,
+              slug: l.category_slug,
+              icon: l.category_icon || '📚',
+              description: l.category_description,
+            }
+          : null,
+      }))
+    );
   } catch (err) {
     console.error('Fetch lessons error:', err);
     res.status(500).json({ error: 'Failed to fetch lessons.' });
   }
 });
 
-// 2. Get Single Lesson with Content, Prev, and Next
+// 2. Get Single Lesson with Content, Category, Prev, and Next
 router.get('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const [rows] = await pool.query('SELECT * FROM lessons WHERE id = ?', [id]);
+    const [rows] = await pool.query(
+      `SELECT l.*,
+              c.name as category_name, c.slug as category_slug, c.icon as category_icon, c.description as category_description
+       FROM lessons l
+       LEFT JOIN categories c ON l.category_id = c.id
+       WHERE l.id = ?`,
+      [id]
+    );
+
     if (rows.length === 0) {
       return res.status(404).json({ error: 'Lesson not found.' });
     }
 
-    const lesson = rows[0];
+    const row = rows[0];
+    const lesson = {
+      ...row,
+      category: row.category_id
+        ? {
+            id: row.category_id,
+            name: row.category_name,
+            slug: row.category_slug,
+            icon: row.category_icon || '📚',
+            description: row.category_description,
+          }
+        : null,
+    };
 
-    // Find Previous and Next Lessons in the same lesson_type
+    // Find Previous and Next Lessons in the same category (or fallback to lesson_type)
+    let prevQuery = 'SELECT id, title, lesson_date, lesson_type, category_id FROM lessons WHERE status = 1';
+    let nextQuery = 'SELECT id, title, lesson_date, lesson_type, category_id FROM lessons WHERE status = 1';
+    const filterParams = [];
+
+    if (lesson.category_id) {
+      prevQuery += ' AND category_id = ?';
+      nextQuery += ' AND category_id = ?';
+      filterParams.push(lesson.category_id);
+    } else {
+      prevQuery += ' AND lesson_type = ?';
+      nextQuery += ' AND lesson_type = ?';
+      filterParams.push(lesson.lesson_type);
+    }
+
     const [prevRows] = await pool.query(
-      `SELECT id, title, lesson_date, lesson_type FROM lessons
-       WHERE lesson_type = ? AND status = 1 AND (lesson_date < ? OR (lesson_date = ? AND id < ?))
+      `${prevQuery} AND (lesson_date < ? OR (lesson_date = ? AND id < ?))
        ORDER BY lesson_date DESC, id DESC LIMIT 1`,
-      [lesson.lesson_type, lesson.lesson_date, lesson.lesson_date, lesson.id]
+      [...filterParams, lesson.lesson_date, lesson.lesson_date, lesson.id]
     );
 
     const [nextRows] = await pool.query(
-      `SELECT id, title, lesson_date, lesson_type FROM lessons
-       WHERE lesson_type = ? AND status = 1 AND (lesson_date > ? OR (lesson_date = ? AND id > ?))
+      `${nextQuery} AND (lesson_date > ? OR (lesson_date = ? AND id > ?))
        ORDER BY lesson_date ASC, id ASC LIMIT 1`,
-      [lesson.lesson_type, lesson.lesson_date, lesson.lesson_date, lesson.id]
+      [...filterParams, lesson.lesson_date, lesson.lesson_date, lesson.id]
     );
 
     res.json({
@@ -77,27 +146,44 @@ router.get('/:id', async (req, res) => {
 // 3. Admin: Create Lesson
 router.post('/', requireAdmin, async (req, res) => {
   try {
-    const { title, lesson_date, topic, status, lesson_type, content } = req.body;
+    const { title, lesson_date, topic, status, category_id, lesson_type, content } = req.body;
     if (!title?.trim() || !lesson_date) {
       return res.status(400).json({ error: 'Title and lesson date are required.' });
     }
 
+    const catId = category_id !== undefined && category_id !== null && category_id !== '' ? parseInt(category_id, 10) : null;
+    const lType = lesson_type !== undefined ? parseInt(lesson_type, 10) : 0;
+
     const [result] = await pool.query(
-      `INSERT INTO lessons (title, lesson_date, topic, status, author_id, lesson_type, content, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
+      `INSERT INTO lessons (title, lesson_date, topic, status, author_id, category_id, lesson_type, content, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
       [
         title.trim(),
         lesson_date,
         topic?.trim() || null,
         status ?? 0,
         req.user.id,
-        lesson_type ?? 0,
+        catId,
+        lType,
         content || '',
       ]
     );
 
-    const [created] = await pool.query('SELECT * FROM lessons WHERE id = ?', [result.insertId]);
-    res.status(201).json(created[0]);
+    const [created] = await pool.query(
+      `SELECT l.*, c.name as category_name, c.slug as category_slug, c.icon as category_icon
+       FROM lessons l
+       LEFT JOIN categories c ON l.category_id = c.id
+       WHERE l.id = ?`,
+      [result.insertId]
+    );
+
+    const row = created[0];
+    res.status(201).json({
+      ...row,
+      category: row.category_id
+        ? { id: row.category_id, name: row.category_name, slug: row.category_slug, icon: row.category_icon || '📚' }
+        : null,
+    });
   } catch (err) {
     console.error('Create lesson error:', err);
     res.status(500).json({ error: 'Failed to create lesson.' });
@@ -108,30 +194,47 @@ router.post('/', requireAdmin, async (req, res) => {
 router.put('/:id', requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
-    const { title, lesson_date, topic, status, lesson_type, content } = req.body;
+    const { title, lesson_date, topic, status, category_id, lesson_type, content } = req.body;
 
     const [existing] = await pool.query('SELECT id FROM lessons WHERE id = ?', [id]);
     if (existing.length === 0) {
       return res.status(404).json({ error: 'Lesson not found.' });
     }
 
+    const catId = category_id !== undefined && category_id !== null && category_id !== '' ? parseInt(category_id, 10) : null;
+    const lType = lesson_type !== undefined ? parseInt(lesson_type, 10) : 0;
+
     await pool.query(
       `UPDATE lessons
-       SET title = ?, lesson_date = ?, topic = ?, status = ?, lesson_type = ?, content = ?, updated_at = NOW()
+       SET title = ?, lesson_date = ?, topic = ?, status = ?, category_id = ?, lesson_type = ?, content = ?, updated_at = NOW()
        WHERE id = ?`,
       [
         title.trim(),
         lesson_date,
         topic?.trim() || null,
         status ?? 0,
-        lesson_type ?? 0,
+        catId,
+        lType,
         content || '',
         id,
       ]
     );
 
-    const [updated] = await pool.query('SELECT * FROM lessons WHERE id = ?', [id]);
-    res.json(updated[0]);
+    const [updated] = await pool.query(
+      `SELECT l.*, c.name as category_name, c.slug as category_slug, c.icon as category_icon
+       FROM lessons l
+       LEFT JOIN categories c ON l.category_id = c.id
+       WHERE l.id = ?`,
+      [id]
+    );
+
+    const row = updated[0];
+    res.json({
+      ...row,
+      category: row.category_id
+        ? { id: row.category_id, name: row.category_name, slug: row.category_slug, icon: row.category_icon || '📚' }
+        : null,
+    });
   } catch (err) {
     console.error('Update lesson error:', err);
     res.status(500).json({ error: 'Failed to update lesson.' });

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Lesson, LessonType, LessonStatus } from '../../types/database';
 import { api } from '../../services/api';
+import CategorySelect from './CategorySelect';
 import { ArrowLeft, Save, Trash2, Eye, Code, Loader2 } from 'lucide-react';
 
 interface LessonFormProps {
@@ -15,6 +16,9 @@ export default function LessonForm({ initialLesson = {}, isEditing = false }: Le
   const [title, setTitle] = useState(initialLesson.title || '');
   const [lessonDate, setLessonDate] = useState(
     initialLesson.lesson_date || new Date().toISOString().split('T')[0]
+  );
+  const [categoryId, setCategoryId] = useState<number | null>(
+    initialLesson.category_id ?? null
   );
   const [lessonType, setLessonType] = useState<LessonType>(initialLesson.lesson_type ?? 0);
   const [topic, setTopic] = useState(initialLesson.topic || '');
@@ -38,6 +42,7 @@ export default function LessonForm({ initialLesson = {}, isEditing = false }: Le
     const payload = {
       title: title.trim(),
       lesson_date: lessonDate,
+      category_id: categoryId,
       lesson_type: lessonType,
       topic: topic.trim() || null,
       status,
@@ -161,15 +166,14 @@ export default function LessonForm({ initialLesson = {}, isEditing = false }: Le
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1.5">Lesson Type</label>
-            <select
-              value={lessonType}
-              onChange={(e) => setLessonType(parseInt(e.target.value, 10) as LessonType)}
-              className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:border-brand-600"
-            >
-              <option value={0}>Daily Class (0)</option>
-              <option value={1}>Foundational Topic (1)</option>
-            </select>
+            <label className="block text-xs font-bold text-slate-700 mb-1.5">
+              Category <span className="text-brand-600">*</span>
+            </label>
+            <CategorySelect
+              value={categoryId}
+              onChange={(newCatId) => setCategoryId(newCatId)}
+              required
+            />
           </div>
 
           <div>

@@ -19,6 +19,7 @@ import SignUpPage from './pages/SignUpPage';
 import AdminLayout from './components/admin/AdminLayout';
 import AdminLoginPage from './pages/admin/AdminLoginPage';
 import AdminDashboardPage from './pages/admin/AdminDashboardPage';
+import AdminCategoriesPage from './pages/admin/AdminCategoriesPage';
 import NewLessonPage from './pages/admin/NewLessonPage';
 import EditLessonPage from './pages/admin/EditLessonPage';
 import AdminStudentsPage from './pages/admin/AdminStudentsPage';
@@ -136,6 +137,7 @@ export default function App() {
           <Route path="/admin" element={<AdminLayout />}>
             <Route path="login" element={<Navigate to="/auth/sign-in?redirectTo=/admin" replace />} />
             <Route index element={<AdminDashboardPage />} />
+            <Route path="categories" element={<AdminCategoriesPage />} />
             <Route path="lessons/new" element={<NewLessonPage />} />
             <Route path="lessons/:id/edit" element={<EditLessonPage />} />
             <Route path="students" element={<AdminStudentsPage />} />

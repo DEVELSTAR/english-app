@@ -7,6 +7,7 @@ import {
   Users,
   ShieldCheck,
   History,
+  FolderTree,
   LogOut,
   Loader2,
 } from 'lucide-react';
@@ -43,6 +44,7 @@ export default function AdminLayout() {
   const navItems = [
     { name: 'Dashboard', path: '/admin', icon: LayoutDashboard },
     { name: 'New Lesson', path: '/admin/lessons/new', icon: BookPlus },
+    { name: 'Categories', path: '/admin/categories', icon: FolderTree },
     { name: 'Students', path: '/admin/students', icon: Users },
     ...(isSuperAdmin ? [{ name: 'Admin Staff', path: '/admin/admins', icon: ShieldCheck }] : []),
     { name: 'Audit Logs', path: '/admin/history', icon: History },

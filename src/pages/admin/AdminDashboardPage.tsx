@@ -9,6 +9,7 @@ import {
   Shield,
   Plus,
   Search,
+  FolderTree,
   Edit2,
   Trash2,
   Loader2,
@@ -17,6 +18,7 @@ import {
 
 export default function AdminDashboardPage() {
   const [lessons, setLessons] = useState<Lesson[]>([]);
+  const [categoriesCount, setCategoriesCount] = useState(0);
   const [studentsCount, setStudentsCount] = useState(0);
   const [search, setSearch] = useState('');
   const [isLoading, setIsLoading] = useState(true);
@@ -24,12 +26,14 @@ export default function AdminDashboardPage() {
   const loadData = async () => {
     setIsLoading(true);
     try {
-      const [lessonList, studentList] = await Promise.all([
+      const [lessonList, studentList, catList] = await Promise.all([
         api.getLessons(),
         api.getStudents().catch(() => []),
+        api.getCategories().catch(() => []),
       ]);
       setLessons(lessonList);
       setStudentsCount(studentList.length);
+      setCategoriesCount(catList.length);
     } catch (err) {
       console.error(err);
     } finally {
@@ -51,13 +55,11 @@ export default function AdminDashboardPage() {
     }
   };
 
-  const classesCount = lessons.filter((l) => l.lesson_type === 0).length;
-  const topicsCount = lessons.filter((l) => l.lesson_type === 1).length;
-
   const filtered = lessons.filter(
     (l) =>
       l.title.toLowerCase().includes(search.toLowerCase()) ||
-      (l.topic && l.topic.toLowerCase().includes(search.toLowerCase()))
+      (l.topic && l.topic.toLowerCase().includes(search.toLowerCase())) ||
+      (l.category?.name && l.category.name.toLowerCase().includes(search.toLowerCase()))
   );
 
   return (
@@ -66,19 +68,22 @@ export default function AdminDashboardPage() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white p-5 rounded-3xl border border-slate-200/90 shadow-2xs space-y-1">
           <div className="flex items-center justify-between text-slate-400">
-            <span className="text-[11px] font-bold uppercase tracking-wider">Daily Classes</span>
+            <span className="text-[11px] font-bold uppercase tracking-wider">Total Lessons</span>
             <BookOpen className="w-4 h-4 text-brand-600" />
           </div>
-          <div className="text-2xl font-black text-slate-900">{classesCount}</div>
+          <div className="text-2xl font-black text-slate-900">{lessons.length}</div>
         </div>
 
-        <div className="bg-white p-5 rounded-3xl border border-slate-200/90 shadow-2xs space-y-1">
-          <div className="flex items-center justify-between text-slate-400">
-            <span className="text-[11px] font-bold uppercase tracking-wider">Foundations</span>
-            <Layers className="w-4 h-4 text-indigo-600" />
+        <Link
+          to="/admin/categories"
+          className="bg-white p-5 rounded-3xl border border-slate-200/90 shadow-2xs space-y-1 hover:border-indigo-300 transition block group"
+        >
+          <div className="flex items-center justify-between text-slate-400 group-hover:text-indigo-600">
+            <span className="text-[11px] font-bold uppercase tracking-wider">Categories</span>
+            <FolderTree className="w-4 h-4 text-indigo-600" />
           </div>
-          <div className="text-2xl font-black text-slate-900">{topicsCount}</div>
-        </div>
+          <div className="text-2xl font-black text-slate-900">{categoriesCount}</div>
+        </Link>
 
         <div className="bg-white p-5 rounded-3xl border border-slate-200/90 shadow-2xs space-y-1">
           <div className="flex items-center justify-between text-slate-400">
@@ -157,15 +162,16 @@ export default function AdminDashboardPage() {
                     </td>
                     <td className="py-3.5 px-5 font-mono text-slate-500">{lesson.lesson_date}</td>
                     <td className="py-3.5 px-5">
-                      <span
-                        className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                          lesson.lesson_type === 1
-                            ? 'bg-indigo-50 text-indigo-700'
-                            : 'bg-brand-50 text-brand-700'
-                        }`}
-                      >
-                        {lesson.lesson_type === 1 ? 'Foundational Topic' : 'Daily Class'}
-                      </span>
+                      {lesson.category ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-100">
+                          <span>{lesson.category.icon || '📁'}</span>
+                          <span>{lesson.category.name}</span>
+                        </span>
+                      ) : (
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-500">
+                          Uncategorized
+                        </span>
+                      )}
                     </td>
                     <td className="py-3.5 px-5">
                       <span

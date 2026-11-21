@@ -64,11 +64,11 @@ export default function LessonDetailPage() {
       {/* Top Back Link & Navigation */}
       <div className="flex items-center justify-between">
         <Link
-          to={isTopic ? '/topics' : '/lessons'}
+          to={lesson.category ? `/lessons?category=${lesson.category.slug}` : '/lessons'}
           className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-brand-600 transition"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
-          <span>Back to {isTopic ? 'Foundations' : 'Daily Classes'}</span>
+          <span>Back to {lesson.category ? lesson.category.name : 'Lessons'}</span>
         </Link>
       </div>
 
@@ -80,12 +80,9 @@ export default function LessonDetailPage() {
           <div className="space-y-4 border-b border-slate-100 pb-5">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-2">
-                <span
-                  className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                    isTopic ? 'bg-indigo-50 text-indigo-700' : 'bg-brand-50 text-brand-700'
-                  }`}
-                >
-                  {lesson.topic || (isTopic ? 'Grammar Foundation' : 'Daily Speaking')}
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-brand-50 text-brand-700">
+                  <span>{lesson.category?.icon || '📚'}</span>
+                  <span>{lesson.category?.name || lesson.topic || 'Lesson'}</span>
                 </span>
 
                 <span className="text-xs text-slate-400 font-mono flex items-center gap-1">

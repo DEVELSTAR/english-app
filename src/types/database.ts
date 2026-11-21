@@ -13,6 +13,18 @@ export interface User {
   updated_at?: string;
 }
 
+export interface Category {
+  id: number;
+  name: string;
+  slug: string;
+  icon: string;
+  description?: string | null;
+  order_index?: number;
+  lessons_count?: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
 export type LessonStatus = 0 | 1 | 2; // 0: draft, 1: published, 2: archived
 export type LessonType = 0 | 1; // 0: daily_class, 1: foundational_topic
 
@@ -23,7 +35,9 @@ export interface Lesson {
   topic?: string | null;
   status: LessonStatus;
   author_id?: number | null;
-  lesson_type: LessonType;
+  lesson_type?: LessonType;
+  category_id?: number | null;
+  category?: Category | null;
   content?: string | null;
   created_at: string;
   updated_at: string;

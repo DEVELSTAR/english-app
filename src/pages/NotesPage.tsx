@@ -366,7 +366,7 @@ export default function NotesPage() {
               >
                 <option value="">General Note (No Lesson)</option>
                 {lessonsList.map((l) => {
-                  const prefix = l.lesson_type === 1 ? '[Topic] ' : '[Class] ';
+                  const prefix = l.category ? `[${l.category.name}] ` : '';
                   const displayTitle = l.title.length > 40 ? `${l.title.slice(0, 40)}...` : l.title;
                   return (
                     <option key={l.id} value={l.id} title={l.title}>
@@ -498,7 +498,7 @@ export default function NotesPage() {
             <span>
               Filtered by:{' '}
               <strong>
-                {filteredLesson.lesson_type === 1 ? 'Topic: ' : 'Class: '}
+                {filteredLesson.category?.name ? `${filteredLesson.category.name}: ` : ''}
                 {filteredLesson.title}
               </strong>
             </span>
@@ -751,18 +751,13 @@ export default function NotesPage() {
 
                     {note.lesson && (
                       <Link
-                        to={
-                          note.lesson.lesson_type === 1
-                            ? `/topics/${note.lesson.id}`
-                            : `/lessons/${note.lesson.id}`
-                        }
+                        to={`/lessons/${note.lesson.id}`}
                         className="inline-flex items-center gap-1 text-[11px] font-semibold text-brand-800 bg-brand-50 border border-brand-200 px-2 py-0.5 rounded-md hover:bg-brand-100 transition"
                       >
                         <BookOpen className="w-3 h-3" />
                         <span>
-                          {note.lesson.lesson_type === 1 ? 'Topic: ' : 'Class: '}
-                          {note.lesson.title.length > 32
-                            ? `${note.lesson.title.slice(0, 32)}...`
+                          {note.lesson.title.length > 36
+                            ? `${note.lesson.title.slice(0, 36)}...`
                             : note.lesson.title}
                         </span>
                       </Link>

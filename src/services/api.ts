@@ -102,9 +102,28 @@ export const api = {
   deleteAdmin: (id: number) =>
     request<{ success: boolean }>(`/api/auth/admins/${id}`, { method: 'DELETE' }),
 
+  // Categories
+  getCategories: () => request<any[]>('/api/categories'),
+  createCategory: (data: { name: string; icon?: string; description?: string; order_index?: number }) =>
+    request<any>('/api/categories', { method: 'POST', body: JSON.stringify(data) }),
+  updateCategory: (
+    id: number,
+    data: { name?: string; icon?: string; description?: string; order_index?: number }
+  ) => request<any>(`/api/categories/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deleteCategory: (id: number) =>
+    request<{ success: boolean; message: string }>(`/api/categories/${id}`, { method: 'DELETE' }),
+
   // Lessons
-  getLessons: (options?: { lesson_type?: number; status?: number; search?: string }) => {
+  getLessons: (options?: {
+    category_id?: number;
+    category?: string;
+    lesson_type?: number;
+    status?: number;
+    search?: string;
+  }) => {
     const params = new URLSearchParams();
+    if (options?.category_id !== undefined) params.append('category_id', String(options.category_id));
+    if (options?.category) params.append('category', options.category);
     if (options?.lesson_type !== undefined) params.append('lesson_type', String(options.lesson_type));
     if (options?.status !== undefined) params.append('status', String(options.status));
     if (options?.search) params.append('search', options.search);

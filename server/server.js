@@ -7,6 +7,7 @@ import { fileURLToPath } from 'url';
 import { testConnection } from './config/db.js';
 import authRoutes from './routes/auth.js';
 import lessonsRoutes from './routes/lessons.js';
+import categoriesRoutes from './routes/categories.js';
 import notesRoutes from './routes/notes.js';
 import aiRoutes from './routes/ai.js';
 import historyRoutes from './routes/history.js';
@@ -48,6 +49,7 @@ app.get('/api/db-status', async (req, res) => {
 // Mount API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/lessons', lessonsRoutes);
+app.use('/api/categories', categoriesRoutes);
 app.use('/api/notes', notesRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/history', historyRoutes);
