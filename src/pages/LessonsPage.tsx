@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { api } from '../services/api';
 import { Lesson, Category } from '../types/database';
+import { formatISTDate } from '../lib/dateUtils';
 import { BookOpen, Search, ArrowRight, Loader2, Calendar, Sparkles } from 'lucide-react';
 
 export default function LessonsPage() {
@@ -62,7 +63,6 @@ export default function LessonsPage() {
       list = list.filter(
         (l) =>
           l.title.toLowerCase().includes(q) ||
-          (l.topic && l.topic.toLowerCase().includes(q)) ||
           (l.category?.name && l.category.name.toLowerCase().includes(q))
       );
     }
@@ -189,7 +189,7 @@ export default function LessonsPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {filtered.map((lesson) => {
-            const catName = lesson.category?.name || lesson.topic || 'Lesson';
+            const catName = lesson.category?.name || 'Lesson';
             const catIcon = lesson.category?.icon || '📚';
 
             return (
@@ -206,7 +206,7 @@ export default function LessonsPage() {
                     </span>
                     <span className="text-[11px] text-slate-400 font-mono flex items-center gap-1 shrink-0">
                       <Calendar className="w-3 h-3" />
-                      <span>{lesson.lesson_date}</span>
+                      <span>{formatISTDate(lesson.lesson_date)}</span>
                     </span>
                   </div>
 

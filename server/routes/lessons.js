@@ -49,7 +49,9 @@ router.get('/', async (req, res) => {
       lessons.map((l) => ({
         id: l.id,
         title: l.title,
-        lesson_date: l.lesson_date,
+        lesson_date: l.lesson_date
+          ? (l.lesson_date instanceof Date ? l.lesson_date.toISOString().split('T')[0] : String(l.lesson_date).split('T')[0])
+          : null,
         topic: l.topic,
         status: l.status,
         author_id: l.author_id,
@@ -94,6 +96,9 @@ router.get('/:id', async (req, res) => {
     const row = rows[0];
     const lesson = {
       ...row,
+      lesson_date: row.lesson_date
+        ? (row.lesson_date instanceof Date ? row.lesson_date.toISOString().split('T')[0] : String(row.lesson_date).split('T')[0])
+        : null,
       category: row.category_id
         ? {
             id: row.category_id,

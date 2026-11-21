@@ -1,37 +1,100 @@
-export function formatTimeAgo(dateString?: string): string {
-  if (!dateString) return '';
-  const date = new Date(dateString);
-  const now = new Date();
-  const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+/**
+ * Date and time formatting utilities tailored for Indian Standard Time (IST - UTC+5:30)
+ * and 12-hour AM/PM format across FluentEdge.
+ */
 
-  if (diffInSeconds < 60) return 'just now';
-  const diffInMinutes = Math.floor(diffInSeconds / 60);
-  if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
-  const diffInHours = Math.floor(diffInMinutes / 60);
-  if (diffInHours < 24) return `${diffInHours}h ago`;
-  const diffInDays = Math.floor(diffInHours / 24);
-  if (diffInDays < 30) return `${diffInDays}d ago`;
-  return date.toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' });
+export function parseDateSafe(dateString?: string): Date | null {
+  if (!dateString) return null;
+  const str = String(dateString).trim();
+  // If in YYYY-MM-DD format (no time component), prevent timezone shift
+  if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
+    const [y, m, d] = str.split('-').map(Number);
+    return new Date(y, m - 1, d);
+  }
+  const d = new Date(str);
+  return isNaN(d.getTime()) ? null : d;
 }
 
+/**
+ * Format date only in IST (e.g., "20 Nov 2026")
+ */
 export function formatISTDate(dateString?: string): string {
-  if (!dateString) return '';
-  const date = new Date(dateString);
+  const date = parseDateSafe(dateString);
+  if (!date) return dateString ? String(dateString) : '';
   return date.toLocaleDateString('en-IN', {
+    timeZone: 'Asia/Kolkata',
     day: 'numeric',
     month: 'short',
     year: 'numeric',
   });
 }
 
+/**
+ * Format time only in IST in 12-hour AM/PM (e.g., "11:30 AM")
+ */
+export function formatISTTime(dateString?: string): string {
+  const date = parseDateSafe(dateString);
+  if (!date) return '';
+  return date.toLocaleTimeString('en-IN', {
+    timeZone: 'Asia/Kolkata',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  });
+}
+
+/**
+ * Format full date and time in IST in 12-hour AM/PM (e.g., "20 Nov 2026, 11:30 AM")
+ */
 export function formatISTDateTime(dateString?: string): string {
-  if (!dateString) return '';
-  const date = new Date(dateString);
-  return date.toLocaleDateString('en-IN', {
+  const date = parseDateSafe(dateString);
+  if (!date) return '';
+  const datePart = date.toLocaleDateString('en-IN', {
+    timeZone: 'Asia/Kolkata',
     day: 'numeric',
     month: 'short',
     year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
   });
+  const timePart = date.toLocaleTimeString('en-IN', {
+    timeZone: 'Asia/Kolkata',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  });
+  return `${datePart}, ${timePart}`;
+}
+
+/**
+ * Human-readable contextual time in IST with AM/PM (e.g., "Today, 11:30 AM", "Yesterday, 4:15 PM", "18 Nov, 9:20 PM")
+ */
+export function formatTimeAgo(dateString?: string): string {
+  const date = parseDateSafe(dateString);
+  if (!date) return '';
+
+  const now = new Date();
+  const timeStr = date.toLocaleTimeString('en-IN', {
+    timeZone: 'Asia/Kolkata',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  });
+
+  // Calculate day difference relative to IST
+  const isToday = date.toDateString() === now.toDateString();
+  if (isToday) {
+    return `Today, ${timeStr}`;
+  }
+
+  const yesterday = new Date(now);
+  yesterday.setDate(now.getDate() - 1);
+  if (date.toDateString() === yesterday.toDateString()) {
+    return `Yesterday, ${timeStr}`;
+  }
+
+  const datePart = date.toLocaleDateString('en-IN', {
+    timeZone: 'Asia/Kolkata',
+    day: 'numeric',
+    month: 'short',
+  });
+  return `${datePart}, ${timeStr}`;
 }

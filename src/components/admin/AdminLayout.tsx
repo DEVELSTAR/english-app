@@ -58,10 +58,10 @@ export default function AdminLayout() {
   return (
     <div className="min-h-screen bg-slate-100/60 flex flex-col md:flex-row">
       {/* Sidebar */}
-      <aside className="w-full md:w-64 bg-slate-900 text-slate-300 flex flex-col justify-between shrink-0">
-        <div>
+      <aside className="w-full md:w-64 bg-slate-900 text-slate-300 flex flex-col justify-between shrink-0 md:sticky md:top-0 md:h-screen z-30 border-r border-slate-800">
+        <div className="flex flex-col flex-1 min-h-0">
           {/* Header */}
-          <div className="p-6 border-b border-slate-800 flex items-center justify-between">
+          <div className="p-6 border-b border-slate-800 flex items-center justify-between shrink-0">
             <Link to="/admin" className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-xl bg-brand-500 text-white flex items-center justify-center font-black text-sm shadow-sm">
                 FE
@@ -76,7 +76,7 @@ export default function AdminLayout() {
           </div>
 
           {/* Navigation */}
-          <nav className="p-4 space-y-1">
+          <nav className="p-4 space-y-1 overflow-y-auto flex-1">
             {navItems.map((item) => {
               const active = isActive(item.path);
               const Icon = item.icon;
@@ -98,8 +98,8 @@ export default function AdminLayout() {
           </nav>
         </div>
 
-        {/* Footer controls */}
-        <div className="p-4 border-t border-slate-800">
+        {/* Footer controls - Pinned at bottom of sidebar */}
+        <div className="p-4 border-t border-slate-800 shrink-0 bg-slate-900">
           <button
             type="button"
             onClick={logout}
@@ -112,7 +112,7 @@ export default function AdminLayout() {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 p-6 md:p-10 max-w-7xl mx-auto w-full">
+      <main className="flex-1 p-6 md:p-10 max-w-7xl mx-auto w-full min-w-0">
         <Outlet />
       </main>
     </div>

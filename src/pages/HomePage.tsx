@@ -3,6 +3,7 @@ import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
 import { Lesson, Category } from '../types/database';
+import { formatISTDate } from '../lib/dateUtils';
 import {
   Sparkles,
   BookOpen,
@@ -71,7 +72,6 @@ export default function HomePage() {
       list = list.filter(
         (l) =>
           l.title.toLowerCase().includes(q) ||
-          (l.topic && l.topic.toLowerCase().includes(q)) ||
           (l.category?.name && l.category.name.toLowerCase().includes(q))
       );
     }
@@ -232,7 +232,7 @@ export default function HomePage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {filteredList.map((lesson) => {
-              const catName = lesson.category?.name || lesson.topic || 'Lesson';
+              const catName = lesson.category?.name || 'Lesson';
               const catIcon = lesson.category?.icon || '📚';
 
               return (
@@ -249,7 +249,7 @@ export default function HomePage() {
                       </span>
                       <span className="text-[11px] font-mono text-slate-400 flex items-center gap-1 shrink-0">
                         <Calendar className="w-3 h-3" />
-                        <span>{lesson.lesson_date}</span>
+                        <span>{formatISTDate(lesson.lesson_date)}</span>
                       </span>
                     </div>
 

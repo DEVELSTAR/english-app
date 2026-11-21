@@ -208,27 +208,25 @@ export default function Navbar() {
             )}
           </div>
 
-          {/* Mobile Actions: Mini Avatar + Hamburger Button */}
-          <div className="flex md:hidden items-center gap-2">
-            {currentUser && (
+          {/* Mobile Action: Profile Avatar only (no redundant hamburger) */}
+          <div className="flex md:hidden items-center">
+            {currentUser ? (
               <button
                 type="button"
                 onClick={() => setMobileMenuOpen(true)}
-                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm shadow-xs border border-white/50 cursor-pointer ${iconMeta.color}`}
+                className={`w-9 h-9 rounded-full flex items-center justify-center text-base shadow-xs border border-slate-200 cursor-pointer active:scale-95 transition-transform ${iconMeta.color}`}
                 aria-label="Open student menu"
               >
                 {iconMeta.emoji}
               </button>
+            ) : (
+              <Link
+                to="/auth/sign-in"
+                className="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-brand-600 text-white shadow-xs hover:bg-brand-700 transition"
+              >
+                Sign In
+              </Link>
             )}
-
-            <button
-              type="button"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2 rounded-xl text-slate-700 hover:bg-slate-100 transition cursor-pointer border border-slate-200/80 shadow-2xs"
-              aria-label="Toggle navigation drawer"
-            >
-              {mobileMenuOpen ? <X className="w-5 h-5 text-slate-800" /> : <Menu className="w-5 h-5 text-slate-800" />}
-            </button>
           </div>
         </div>
       </div>

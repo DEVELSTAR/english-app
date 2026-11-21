@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../../services/api';
 import { Lesson } from '../../types/database';
+import { formatISTDate } from '../../lib/dateUtils';
 import {
   BookOpen,
   Layers,
@@ -148,7 +149,7 @@ export default function AdminDashboardPage() {
                 <tr>
                   <th className="py-3.5 px-5">Title</th>
                   <th className="py-3.5 px-5">Date</th>
-                  <th className="py-3.5 px-5">Type</th>
+                  <th className="py-3.5 px-5">Category</th>
                   <th className="py-3.5 px-5">Status</th>
                   <th className="py-3.5 px-5 text-right">Actions</th>
                 </tr>
@@ -158,9 +159,10 @@ export default function AdminDashboardPage() {
                   <tr key={lesson.id} className="hover:bg-slate-50/60 transition">
                     <td className="py-3.5 px-5">
                       <span className="font-bold text-slate-900 block">{lesson.title}</span>
-                      <span className="text-[10px] text-slate-400">{lesson.topic || 'No topic'}</span>
                     </td>
-                    <td className="py-3.5 px-5 font-mono text-slate-500">{lesson.lesson_date}</td>
+                    <td className="py-3.5 px-5 font-mono text-slate-500 text-xs">
+                      {formatISTDate(lesson.lesson_date)}
+                    </td>
                     <td className="py-3.5 px-5">
                       {lesson.category ? (
                         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-100">

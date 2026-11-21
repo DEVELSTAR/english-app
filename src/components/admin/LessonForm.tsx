@@ -15,13 +15,11 @@ export default function LessonForm({ initialLesson = {}, isEditing = false }: Le
 
   const [title, setTitle] = useState(initialLesson.title || '');
   const [lessonDate, setLessonDate] = useState(
-    initialLesson.lesson_date || new Date().toISOString().split('T')[0]
+    initialLesson.lesson_date ? String(initialLesson.lesson_date).split('T')[0] : new Date().toISOString().split('T')[0]
   );
   const [categoryId, setCategoryId] = useState<number | null>(
     initialLesson.category_id ?? null
   );
-  const [lessonType, setLessonType] = useState<LessonType>(initialLesson.lesson_type ?? 0);
-  const [topic, setTopic] = useState(initialLesson.topic || '');
   const [status, setStatus] = useState<LessonStatus>(initialLesson.status ?? 1);
   const [content, setContent] = useState(initialLesson.content || '');
 
@@ -43,8 +41,6 @@ export default function LessonForm({ initialLesson = {}, isEditing = false }: Le
       title: title.trim(),
       lesson_date: lessonDate,
       category_id: categoryId,
-      lesson_type: lessonType,
-      topic: topic.trim() || null,
       status,
       content: content.trim(),
     };
@@ -188,17 +184,6 @@ export default function LessonForm({ initialLesson = {}, isEditing = false }: Le
               <option value={2}>Archived</option>
             </select>
           </div>
-        </div>
-
-        <div>
-          <label className="block text-xs font-bold text-slate-700 mb-1.5">Topic Tag / Category</label>
-          <input
-            type="text"
-            value={topic}
-            onChange={(e) => setTopic(e.target.value)}
-            placeholder="e.g. Daily Speaking, Grammar Foundations, Social Situations"
-            className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:border-brand-600"
-          />
         </div>
 
         {/* Content Body with HTML Preview */}
