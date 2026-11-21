@@ -25,10 +25,11 @@ export default function LessonDetailPage() {
         setNextLesson(res.nextLesson);
       } finally {
         setIsLoading(false);
+        window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
       }
     }
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
     load();
-    window.scrollTo(0, 0);
   }, [id]);
 
   if (isLoading) {

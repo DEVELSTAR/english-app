@@ -34,7 +34,7 @@ export default function AiTutor({ lesson }: AiTutorProps) {
   const [isLiveListening, setIsLiveListening] = useState(false);
   const [speakingMessageId, setSpeakingMessageId] = useState<number | null>(null);
 
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const recorderRef = useRef<AudioRecorder | null>(null);
   const recognizerRef = useRef<LiveSpeechRecognizer | null>(null);
 
@@ -51,9 +51,12 @@ export default function AiTutor({ lesson }: AiTutorProps) {
     loadHistory();
   }, [lesson.id]);
 
+  // Scroll chat messages container (never scrolls the main window)
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, isLoading]);
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
+    }
+  }, [messages.length, isLoading]);
 
   const handleSend = async (customMessage?: string) => {
     const textToSend = customMessage || inputValue.trim();
@@ -195,7 +198,7 @@ export default function AiTutor({ lesson }: AiTutorProps) {
       </div>
 
       {/* Messages Scroll Area */}
-      <div className="flex-1 p-4 overflow-y-auto space-y-3 min-h-[300px]">
+      <div ref={scrollContainerRef} className="flex-1 p-4 overflow-y-auto space-y-3 min-h-[300px]">
         {messages.length === 0 ? (
           <div className="text-center py-8 px-4 space-y-3">
             <div className="w-12 h-12 rounded-2xl bg-brand-100 text-brand-600 flex items-center justify-center mx-auto text-xl shadow-xs">
@@ -280,8 +283,6 @@ export default function AiTutor({ lesson }: AiTutorProps) {
             <span>Akib Sir is thinking...</span>
           </div>
         )}
-
-        <div ref={messagesEndRef} />
       </div>
 
       {/* Input Bar */}
