@@ -194,49 +194,26 @@ export default function HomePage() {
 
       {/* Main Learning Hub Section */}
       <section className="space-y-6">
-        <div className="bg-white p-4 sm:p-6 rounded-3xl border border-slate-200/80 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          {/* Dynamic Category Filter Pills */}
-          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1">
+        {/* Sleek Search Bar */}
+        <div className="relative w-full">
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search lessons..."
+            className="w-full pl-10 pr-10 py-3 text-sm rounded-2xl bg-white border border-slate-200/90 shadow-2xs focus:outline-none focus:border-brand-600 focus:ring-2 focus:ring-brand-500/20 transition placeholder:text-slate-400"
+          />
+          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+          {search && (
             <button
               type="button"
-              onClick={() => setSelectedCategorySlug('all')}
-              className={`shrink-0 px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
-                selectedCategorySlug === 'all'
-                  ? 'bg-brand-600 text-white shadow-2xs'
-                  : 'bg-slate-100 text-slate-600 hover:text-slate-900'
-              }`}
+              onClick={() => setSearch('')}
+              className="w-5 h-5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center text-xs absolute right-3.5 top-1/2 -translate-y-1/2 transition cursor-pointer"
+              aria-label="Clear search"
             >
-              All ({lessons.length})
+              ×
             </button>
-            {categories.map((cat) => (
-              <button
-                key={cat.id}
-                type="button"
-                onClick={() => setSelectedCategorySlug(cat.slug)}
-                className={`shrink-0 flex items-center gap-1 px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
-                  selectedCategorySlug === cat.slug
-                    ? 'bg-brand-600 text-white shadow-2xs'
-                    : 'bg-slate-100 text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                <span>{cat.icon || '📁'}</span>
-                <span>{cat.name}</span>
-                <span className="opacity-75 text-[10px]">({cat.lessons_count ?? 0})</span>
-              </button>
-            ))}
-          </div>
-
-          {/* Search Bar */}
-          <div className="relative w-full sm:w-72">
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search lessons or topics..."
-              className="w-full pl-9 pr-3.5 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:border-brand-600 transition"
-            />
-            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-          </div>
+          )}
         </div>
 
         {/* Lessons Grid */}
