@@ -23,4 +23,7 @@ CREATE TABLE IF NOT EXISTS `notifications` (
   CONSTRAINT `fk_notif_actor` FOREIGN KEY (`actor_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- 2. Allow lesson_id in lesson_chat_messages to be NULL for homepage private tutor
+ALTER TABLE `lesson_chat_messages` MODIFY COLUMN `lesson_id` INT DEFAULT NULL;
+
 SET FOREIGN_KEY_CHECKS = 1;

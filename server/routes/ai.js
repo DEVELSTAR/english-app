@@ -58,20 +58,20 @@ router.post('/chat', requireAuth, async (req, res) => {
     let usedModel = '';
     let lastError = null;
 
-    // Fetch lesson context if lesson_id provided
-    let lessonContext = '';
+    // Fetch lesson context if lesson_id provided, otherwise private tutor mode
+    let systemInstruction = DEFAULT_SYSTEM_INSTRUCTION;
     if (lesson_id) {
       try {
         const [lRows] = await pool.query('SELECT title, topic, content FROM lessons WHERE id = ?', [lesson_id]);
         if (lRows.length > 0) {
-          lessonContext = `Current Lesson: "${lRows[0].title}" (Topic: ${lRows[0].topic || 'General'}).`;
+          systemInstruction = `${DEFAULT_SYSTEM_INSTRUCTION}\nCurrent Lesson: "${lRows[0].title}" (Topic: ${lRows[0].topic || 'General'}).`;
         }
       } catch {
         // ignore
       }
+    } else {
+      systemInstruction = `${DEFAULT_SYSTEM_INSTRUCTION}\nMode: You are the student's personal, 1-on-1 private English speaking tutor. Help them converse fluently, fix grammar mistakes, practice conversational roleplays (interviews, ordering food, meetings, travel), and speak natural English without translating from Hindi.`;
     }
-
-    const systemInstruction = `${DEFAULT_SYSTEM_INSTRUCTION}\n${lessonContext}`;
 
     for (const modelName of candidates) {
       try {
@@ -124,30 +124,54 @@ router.post('/chat', requireAuth, async (req, res) => {
       throw lastError || new Error('All Gemini model candidates failed to return a response.');
     }
 
-    // Persist messages to lesson_chat_messages if lesson_id provided
-    if (lesson_id) {
-      try {
-        if (user_message) {
-          await pool.query(
-            `INSERT INTO lesson_chat_messages (lesson_id, user_id, role, content, created_at, updated_at)
-             VALUES (?, ?, 'user', ?, NOW(), NOW())`,
-            [lesson_id, req.user.id, user_message]
-          );
-        }
+    // Persist messages to lesson_chat_messages (supports both lesson and private homepage chat)
+    try {
+      const lid = lesson_id ? parseInt(lesson_id, 10) : null;
+      if (user_message) {
         await pool.query(
           `INSERT INTO lesson_chat_messages (lesson_id, user_id, role, content, created_at, updated_at)
-           VALUES (?, ?, 'model', ?, NOW(), NOW())`,
-          [lesson_id, req.user.id, reply]
+           VALUES (?, ?, 'user', ?, NOW(), NOW())`,
+          [lid, req.user.id, user_message]
         );
-      } catch (dbErr) {
-        console.error('Could not save chat message to DB:', dbErr);
       }
+      await pool.query(
+        `INSERT INTO lesson_chat_messages (lesson_id, user_id, role, content, created_at, updated_at)
+         VALUES (?, ?, 'model', ?, NOW(), NOW())`,
+        [lid, req.user.id, reply]
+      );
+    } catch (dbErr) {
+      console.error('Could not save chat message to DB:', dbErr);
     }
 
     res.json({ reply, usedModel });
   } catch (err) {
     console.error('AI chat endpoint error:', err);
     res.status(500).json({ error: err?.message || 'Failed to communicate with AI Tutor.' });
+  }
+});
+
+// 2. Fetch Homepage Private Tutor Chat History
+router.get('/history', requireAuth, async (req, res) => {
+  try {
+    const [messages] = await pool.query(
+      'SELECT id, role, content, audio_url, created_at FROM lesson_chat_messages WHERE user_id = ? AND lesson_id IS NULL ORDER BY created_at ASC',
+      [req.user.id]
+    );
+    res.json(messages);
+  } catch (err) {
+    console.error('Fetch private chat history error:', err);
+    res.status(500).json({ error: 'Failed to fetch chat history.' });
+  }
+});
+
+// 3. Clear Homepage Private Tutor Chat History
+router.delete('/history', requireAuth, async (req, res) => {
+  try {
+    await pool.query('DELETE FROM lesson_chat_messages WHERE user_id = ? AND lesson_id IS NULL', [req.user.id]);
+    res.json({ success: true, message: 'Private chat history cleared.' });
+  } catch (err) {
+    console.error('Clear private chat history error:', err);
+    res.status(500).json({ error: 'Failed to clear chat history.' });
   }
 });
 

@@ -41,7 +41,7 @@ export default function LessonSidebar({ lesson }: LessonSidebarProps) {
       {/* Sleek Floating Tabs Header */}
       <div className="p-2.5 bg-slate-50/90 border-b border-slate-200/80 shrink-0">
         <div className="grid grid-cols-3 gap-1.5 w-full bg-slate-200/50 p-1 rounded-2xl">
-          {/* Tab 1: AI Tutor */}
+          {/* Tab 1: Lesson AI Tutor */}
           <button
             type="button"
             onClick={() => handleTabChange('ai_tutor')}

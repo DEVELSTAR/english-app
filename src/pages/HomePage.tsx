@@ -5,6 +5,7 @@ import { api } from '../services/api';
 import { Category, Lesson } from '../types/database';
 import { formatISTDate } from '../lib/dateUtils';
 import { Sparkles, ArrowRight, Loader2 } from 'lucide-react';
+import PrivateTutorCard from '../components/home/PrivateTutorCard';
 
 export default function HomePage() {
   const { currentUser, isAdmin, isLoading: isAuthLoading } = useAuth();
@@ -186,6 +187,9 @@ export default function HomePage() {
           )}
         </section>
       )}
+
+      {/* 1-on-1 Private AI Tutor Section */}
+      <PrivateTutorCard />
     </div>
   );
 }
