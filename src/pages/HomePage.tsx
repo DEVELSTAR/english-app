@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
-import { Category } from '../types/database';
+import { Category, Lesson } from '../types/database';
 import { Sparkles, ArrowRight, Loader2 } from 'lucide-react';
 
 export default function HomePage() {
@@ -14,6 +14,7 @@ export default function HomePage() {
   }
 
   const [categories, setCategories] = useState<Category[]>([]);
+  const [latestLesson, setLatestLesson] = useState<Lesson | null>(null);
   const [notesCount, setNotesCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -21,10 +22,14 @@ export default function HomePage() {
     async function loadData() {
       setIsLoading(true);
       try {
-        const [categoriesList] = await Promise.all([
+        const [categoriesList, lessonsList] = await Promise.all([
           api.getCategories(),
+          api.getLessons({ status: 1 }),
         ]);
         setCategories(categoriesList);
+        if (lessonsList && lessonsList.length > 0) {
+          setLatestLesson(lessonsList[0]);
+        }
 
         if (currentUser) {
           try {
@@ -63,6 +68,36 @@ export default function HomePage() {
           <p className="text-sm sm:text-base text-slate-300 leading-relaxed">
             Stop translating word-by-word from Hindi. Practice practical daily conversations with our AI Tutor & structured curriculum.
           </p>
+
+          {/* Latest Lesson CTA Badge */}
+          {latestLesson && (
+            <div className="pt-2">
+              <Link
+                to={`/lessons/${latestLesson.id}`}
+                className="inline-flex items-center gap-3 px-4 sm:px-5 py-2.5 sm:py-3 rounded-2xl bg-white/10 hover:bg-white/20 text-white backdrop-blur-md border border-white/25 shadow-lg hover:border-white/40 transition-all group active:scale-95"
+              >
+                <div className="w-7 h-7 rounded-xl bg-brand-500 text-white flex items-center justify-center text-xs shadow-xs group-hover:scale-110 transition-transform">
+                  🚀
+                </div>
+                <div className="text-left min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-extrabold uppercase tracking-widest text-brand-300">
+                      Latest Class
+                    </span>
+                    {latestLesson.category && (
+                      <span className="text-[10px] font-semibold text-slate-300">
+                        • {latestLesson.category.name}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs sm:text-sm font-bold text-white group-hover:text-brand-200 transition-colors truncate max-w-[230px] sm:max-w-md">
+                    {latestLesson.title}
+                  </p>
+                </div>
+                <ArrowRight className="w-4 h-4 text-brand-300 group-hover:translate-x-1 group-hover:text-white transition-all shrink-0 ml-1" />
+              </Link>
+            </div>
+          )}
         </div>
 
         {/* Decorative background circles */}

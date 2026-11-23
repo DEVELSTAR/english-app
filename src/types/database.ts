@@ -117,3 +117,19 @@ export interface ActivityRecord {
   details: string;
   created_at: string;
 }
+
+export type NotificationType = 'lesson_added' | 'note_reaction' | 'comment_reaction' | 'comment_reply';
+
+export interface AppNotification {
+  id: number;
+  user_id: number;
+  actor_id?: number | null;
+  actor_name?: string | null;
+  actor_icon?: string | null;
+  type: NotificationType;
+  title: string;
+  message: string;
+  link?: string | null;
+  is_read: boolean;
+  created_at: string;
+}

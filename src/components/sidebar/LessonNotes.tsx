@@ -326,6 +326,7 @@ export default function LessonNotes({ lesson, onNotesCountChange }: LessonNotesP
                       <div className="flex items-center gap-2">
                         <ReactionBar
                           reactions={note.reactions}
+                          canReact={Boolean(currentUser && note.user_id !== currentUser.id)}
                           onReact={(emoji) => handleReact(note.id, emoji)}
                           compact
                         />

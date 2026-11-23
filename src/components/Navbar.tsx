@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getProfileIconMeta } from '../lib/profileIcons';
+import NotificationBell from './notifications/NotificationBell';
 import {
   Compass,
   BookOpen,
@@ -125,6 +126,7 @@ export default function Navbar() {
 
           {/* Desktop Right Header: Profile / Auth Actions */}
           <div className="hidden md:flex items-center gap-3">
+            {currentUser && <NotificationBell />}
             {currentUser ? (
               <div className="relative">
                 <button
@@ -208,8 +210,9 @@ export default function Navbar() {
             )}
           </div>
 
-          {/* Mobile Action: Profile Avatar only (no redundant hamburger) */}
-          <div className="flex md:hidden items-center">
+          {/* Mobile Action: Notification Bell & Profile Avatar */}
+          <div className="flex md:hidden items-center gap-2">
+            {currentUser && <NotificationBell />}
             {currentUser ? (
               <button
                 type="button"

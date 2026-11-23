@@ -224,6 +224,16 @@ export const api = {
       body: JSON.stringify({ emoji }),
     }),
 
+  // Notifications
+  getNotifications: () =>
+    request<{ notifications: any[]; unread_count: number }>('/api/notifications'),
+
+  markNotificationRead: (id: number) =>
+    request<{ success: boolean }>(`/api/notifications/${id}/read`, { method: 'PUT' }),
+
+  markAllNotificationsRead: () =>
+    request<{ success: boolean }>('/api/notifications/read-all', { method: 'PUT' }),
+
   // History
   getHistory: (options?: { user_id?: string; resource_type?: string; action?: string; search?: string }) => {
     const params = new URLSearchParams();

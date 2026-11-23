@@ -203,6 +203,7 @@ export default function ChatRoom({ lesson, onCommentCountChange }: ChatRoomProps
                 {/* Reactions */}
                 <ReactionBar
                   reactions={comment.reactions}
+                  canReact={Boolean(currentUser && comment.user_id !== currentUser.id)}
                   onReact={(emoji) => handleReact(comment.id, emoji)}
                 />
 

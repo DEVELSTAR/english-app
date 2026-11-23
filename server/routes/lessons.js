@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import pool from '../config/db.js';
 import { requireAuth, requireAdmin } from '../middleware/auth.js';
+import { createNotification, notifyAllUsers } from '../utils/notifications.js';
 
 const router = Router();
 
@@ -183,6 +184,18 @@ router.post('/', requireAdmin, async (req, res) => {
     );
 
     const row = created[0];
+
+    // If lesson is created as published, notify all students
+    if (status === 1) {
+      await notifyAllUsers({
+        actor_id: req.user.id,
+        type: 'lesson_added',
+        title: '🚀 New Lesson Added',
+        message: `A new lesson "${title.trim()}" was just published!`,
+        link: `/lessons/${result.insertId}`,
+      });
+    }
+
     res.status(201).json({
       ...row,
       category: row.category_id
@@ -201,7 +214,7 @@ router.put('/:id', requireAdmin, async (req, res) => {
     const { id } = req.params;
     const { title, lesson_date, topic, status, category_id, lesson_type, content } = req.body;
 
-    const [existing] = await pool.query('SELECT id FROM lessons WHERE id = ?', [id]);
+    const [existing] = await pool.query('SELECT id, status FROM lessons WHERE id = ?', [id]);
     if (existing.length === 0) {
       return res.status(404).json({ error: 'Lesson not found.' });
     }
@@ -224,6 +237,17 @@ router.put('/:id', requireAdmin, async (req, res) => {
         id,
       ]
     );
+
+    // If newly published, notify all students
+    if (existing[0].status !== 1 && status === 1) {
+      await notifyAllUsers({
+        actor_id: req.user.id,
+        type: 'lesson_added',
+        title: '🚀 New Lesson Published',
+        message: `A new lesson "${title.trim()}" is now available to learn!`,
+        link: `/lessons/${id}`,
+      });
+    }
 
     const [updated] = await pool.query(
       `SELECT l.*, c.name as category_name, c.slug as category_slug, c.icon as category_icon
@@ -400,6 +424,25 @@ router.post('/:id/comments', requireAuth, async (req, res) => {
     );
 
     const r = inserted[0];
+
+    // If replying to a parent comment, notify the parent comment's author
+    if (parent_id) {
+      const [parentRows] = await pool.query(
+        'SELECT c.user_id, l.title as lesson_title FROM lesson_comments c JOIN lessons l ON c.lesson_id = l.id WHERE c.id = ?',
+        [parent_id]
+      );
+      if (parentRows.length > 0 && parentRows[0].user_id !== req.user.id) {
+        await createNotification({
+          user_id: parentRows[0].user_id,
+          actor_id: req.user.id,
+          type: 'comment_reply',
+          title: '💬 New Reply to Your Comment',
+          message: `${req.user.name} replied to your comment in "${parentRows[0].lesson_title}"`,
+          link: `/lessons/${id}`,
+        });
+      }
+    }
+
     res.status(201).json({
       id: r.id,
       lesson_id: r.lesson_id,
@@ -476,9 +519,20 @@ router.post('/:id/comments/:commentId/reactions', requireAuth, async (req, res) 
     const { commentId } = req.params;
     const { emoji } = req.body;
 
-    const [rows] = await pool.query('SELECT reactions FROM lesson_comments WHERE id = ?', [commentId]);
+    const [rows] = await pool.query(
+      `SELECT c.user_id, c.content, c.reactions, c.lesson_id, l.title as lesson_title
+       FROM lesson_comments c
+       JOIN lessons l ON c.lesson_id = l.id
+       WHERE c.id = ?`,
+      [commentId]
+    );
     if (rows.length === 0) {
       return res.status(404).json({ error: 'Comment not found.' });
+    }
+
+    // A student/user can react to others' comments, but NOT their own comment
+    if (rows[0].user_id === req.user.id) {
+      return res.status(400).json({ error: 'You cannot react to your own comment.' });
     }
 
     let reactions = rows[0].reactions;
@@ -488,11 +542,13 @@ router.post('/:id/comments/:commentId/reactions', requireAuth, async (req, res) 
     const userList = reactions[emoji] || [];
     const userId = req.user.id;
     const index = userList.indexOf(userId);
+    let added = false;
 
     if (index > -1) {
       userList.splice(index, 1);
     } else {
       userList.push(userId);
+      added = true;
     }
 
     reactions[emoji] = userList;
@@ -502,8 +558,21 @@ router.post('/:id/comments/:commentId/reactions', requireAuth, async (req, res) 
       commentId,
     ]);
 
+    // If reaction was added, notify the comment author
+    if (added) {
+      await createNotification({
+        user_id: rows[0].user_id,
+        actor_id: req.user.id,
+        type: 'comment_reaction',
+        title: `${emoji} New Reaction in Discussion`,
+        message: `${req.user.name} reacted ${emoji} to your comment in "${rows[0].lesson_title}"`,
+        link: `/lessons/${rows[0].lesson_id}`,
+      });
+    }
+
     res.json({ reactions });
   } catch (err) {
+    console.error('Update reaction error:', err);
     res.status(500).json({ error: 'Failed to update reaction.' });
   }
 });

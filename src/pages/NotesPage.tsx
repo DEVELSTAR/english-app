@@ -795,6 +795,7 @@ export default function NotesPage() {
                   <div className="flex items-center gap-3">
                     <ReactionBar
                       reactions={note.reactions}
+                      canReact={Boolean(currentUser && note.user_id !== currentUser.id)}
                       onReact={(emoji) => api.reactToNote(note.id, emoji).then(() => loadNotesData())}
                     />
 

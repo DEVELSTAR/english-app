@@ -9,6 +9,7 @@ import authRoutes from './routes/auth.js';
 import lessonsRoutes from './routes/lessons.js';
 import categoriesRoutes from './routes/categories.js';
 import notesRoutes from './routes/notes.js';
+import notificationsRoutes from './routes/notifications.js';
 import aiRoutes from './routes/ai.js';
 import historyRoutes from './routes/history.js';
 
@@ -51,6 +52,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/lessons', lessonsRoutes);
 app.use('/api/categories', categoriesRoutes);
 app.use('/api/notes', notesRoutes);
+app.use('/api/notifications', notificationsRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/history', historyRoutes);
 

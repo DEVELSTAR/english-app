@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import pool from '../config/db.js';
 import { requireAuth } from '../middleware/auth.js';
+import { createNotification } from '../utils/notifications.js';
 
 const router = Router();
 
@@ -285,9 +286,14 @@ router.post('/:id/reactions', requireAuth, async (req, res) => {
     const { id } = req.params;
     const { emoji } = req.body;
 
-    const [rows] = await pool.query('SELECT reactions FROM notes WHERE id = ?', [id]);
+    const [rows] = await pool.query('SELECT user_id, content, reactions FROM notes WHERE id = ?', [id]);
     if (rows.length === 0) {
       return res.status(404).json({ error: 'Note not found.' });
+    }
+
+    // A student/user can react to others' notes, but NOT their own note
+    if (rows[0].user_id === req.user.id) {
+      return res.status(400).json({ error: 'You cannot react to your own note.' });
     }
 
     let reactions = rows[0].reactions;
@@ -296,18 +302,39 @@ router.post('/:id/reactions', requireAuth, async (req, res) => {
 
     const userList = reactions[emoji] || [];
     const index = userList.indexOf(req.user.id);
+    let added = false;
 
     if (index > -1) {
       userList.splice(index, 1);
     } else {
       userList.push(req.user.id);
+      added = true;
     }
 
     reactions[emoji] = userList;
 
     await pool.query('UPDATE notes SET reactions = ? WHERE id = ?', [JSON.stringify(reactions), id]);
+
+    // If a reaction was added, notify the note owner
+    if (added) {
+      const snippet = rows[0].content
+        ? rows[0].content.length > 35
+          ? rows[0].content.substring(0, 35) + '...'
+          : rows[0].content
+        : 'your note';
+      await createNotification({
+        user_id: rows[0].user_id,
+        actor_id: req.user.id,
+        type: 'note_reaction',
+        title: `${emoji} New Reaction on Note`,
+        message: `${req.user.name} reacted ${emoji} to your note "${snippet}"`,
+        link: '/notes',
+      });
+    }
+
     res.json({ reactions });
   } catch (err) {
+    console.error('React to note error:', err);
     res.status(500).json({ error: 'Failed to react to note.' });
   }
 });
