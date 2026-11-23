@@ -10,14 +10,14 @@ import lessonsRoutes from './routes/lessons.js';
 import categoriesRoutes from './routes/categories.js';
 import notesRoutes from './routes/notes.js';
 import notificationsRoutes from './routes/notifications.js';
-import aiRoutes from './routes/ai.js';
+import aiRoutes, { getGeminiApiKey } from './routes/ai.js';
 import historyRoutes from './routes/history.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Explicitly load .env from project root regardless of Passenger working directory
-dotenv.config({ path: path.resolve(__dirname, '../.env') });
+dotenv.config({ path: path.resolve(__dirname, '../.env'), override: true });
 dotenv.config();
 
 const app = express();
@@ -35,6 +35,7 @@ app.get('/api/health', (req, res) => {
     timestamp: new Date().toISOString(),
     service: 'FluentEdge English API',
     uptime: process.uptime(),
+    gemini_configured: Boolean(getGeminiApiKey()),
   });
 });
 

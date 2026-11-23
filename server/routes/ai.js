@@ -2,14 +2,57 @@ import { Router } from 'express';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import dotenv from 'dotenv';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 import pool from '../config/db.js';
 import { requireAuth } from '../middleware/auth.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+dotenv.config({ path: path.resolve(__dirname, '../../.env'), override: true });
 dotenv.config();
+
+/**
+ * Robustly resolves the Gemini API key from process.env or directly parses
+ * the .env file from disk. This ensures that even if Node.js / cPanel Passenger
+ * was not restarted immediately after editing .env, or if .env has duplicate lines
+ * (e.g. placeholder + real key), the valid key is picked up automatically.
+ */
+export function getGeminiApiKey() {
+  let key = process.env.GEMINI_API_KEY;
+  if (key && !key.includes('your_') && key.trim().length > 10) {
+    return key.trim();
+  }
+
+  const candidatePaths = [
+    path.resolve(__dirname, '../../.env'),
+    path.resolve(__dirname, '../.env'),
+    path.resolve(process.cwd(), '.env'),
+  ];
+
+  for (const envPath of candidatePaths) {
+    try {
+      if (fs.existsSync(envPath)) {
+        const content = fs.readFileSync(envPath, 'utf8');
+        const lines = content.split('\n');
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (trimmed.startsWith('GEMINI_API_KEY=')) {
+            const val = trimmed.replace('GEMINI_API_KEY=', '').trim().replace(/^['"]|['"]$/g, '');
+            if (val && !val.includes('your_') && val.length > 10) {
+              process.env.GEMINI_API_KEY = val;
+              return val;
+            }
+          }
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  return null;
+}
 
 const router = Router();
 
@@ -37,11 +80,11 @@ let cachedModel = null;
 router.post('/chat', requireAuth, async (req, res) => {
   try {
     const { lesson_id, messages, user_message, audio_data } = req.body;
-    const apiKey = process.env.GEMINI_API_KEY;
+    const apiKey = getGeminiApiKey();
 
     if (!apiKey) {
       return res.status(500).json({
-        error: 'Missing Google Gemini API key. Please configure GEMINI_API_KEY in the server .env.',
+        error: 'Missing Google Gemini API key. Please configure GEMINI_API_KEY in the server .env and restart the application.',
       });
     }
 
