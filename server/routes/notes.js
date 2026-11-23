@@ -2,6 +2,7 @@ import { Router } from 'express';
 import pool from '../config/db.js';
 import { requireAuth } from '../middleware/auth.js';
 import { createNotification } from '../utils/notifications.js';
+import { logAudit } from '../utils/auditLogger.js';
 
 const router = Router();
 
@@ -123,6 +124,15 @@ router.post('/', requireAuth, async (req, res) => {
 
     const noteId = result.insertId;
 
+    // Log audit trail
+    logAudit({
+      user: req.user,
+      action: 'create',
+      resource_type: 'note',
+      resource_id: noteId,
+      details: `Created study note: "${content.trim().substring(0, 50)}${content.trim().length > 50 ? '...' : ''}"`,
+    });
+
     // Handle student shares
     if (Array.isArray(shared_student_ids) && shared_student_ids.length > 0) {
       for (const sid of shared_student_ids) {
@@ -193,6 +203,15 @@ router.put('/:id', requireAuth, async (req, res) => {
       }
     }
 
+    // Log audit trail
+    logAudit({
+      user: req.user,
+      action: 'update',
+      resource_type: 'note',
+      resource_id: id,
+      details: `Updated study note ID ${id}`,
+    });
+
     res.json({ success: true, message: 'Note updated successfully.' });
   } catch (err) {
     console.error('Update note error:', err);
@@ -214,6 +233,16 @@ router.delete('/:id', requireAuth, async (req, res) => {
     }
 
     await pool.query('DELETE FROM notes WHERE id = ?', [id]);
+
+    // Log audit trail
+    logAudit({
+      user: req.user,
+      action: 'destroy',
+      resource_type: 'note',
+      resource_id: id,
+      details: `Deleted note ID ${id}`,
+    });
+
     res.json({ success: true, message: 'Note deleted.' });
   } catch (err) {
     res.status(500).json({ error: 'Failed to delete note.' });
@@ -314,6 +343,15 @@ router.post('/:id/reactions', requireAuth, async (req, res) => {
     reactions[emoji] = userList;
 
     await pool.query('UPDATE notes SET reactions = ? WHERE id = ?', [JSON.stringify(reactions), id]);
+
+    // Log audit trail for reaction
+    logAudit({
+      user: req.user,
+      action: 'reaction',
+      resource_type: 'note',
+      resource_id: id,
+      details: `${req.user.name} ${added ? 'added' : 'removed'} reaction ${emoji} on note ID ${id}`,
+    });
 
     // If a reaction was added, notify the note owner
     if (added) {

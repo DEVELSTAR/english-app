@@ -2,6 +2,7 @@ import { Router } from 'express';
 import pool from '../config/db.js';
 import { requireAuth, requireAdmin } from '../middleware/auth.js';
 import { createNotification, notifyAllUsers } from '../utils/notifications.js';
+import { logAudit } from '../utils/auditLogger.js';
 
 const router = Router();
 
@@ -196,6 +197,16 @@ router.post('/', requireAdmin, async (req, res) => {
       });
     }
 
+    // Log audit trail for lesson
+    logAudit({
+      user: req.user,
+      action: 'create',
+      resource_type: 'lesson',
+      resource_id: result.insertId,
+      resource_title: title.trim(),
+      details: `Created curriculum lesson: "${title.trim()}" (Status: ${status === 1 ? 'Published' : 'Draft'})`,
+    });
+
     res.status(201).json({
       ...row,
       category: row.category_id
@@ -258,6 +269,17 @@ router.put('/:id', requireAdmin, async (req, res) => {
     );
 
     const row = updated[0];
+
+    // Log audit trail
+    logAudit({
+      user: req.user,
+      action: 'update',
+      resource_type: 'lesson',
+      resource_id: id,
+      resource_title: title.trim(),
+      details: `Updated lesson: "${title.trim()}" (Status: ${status === 1 ? 'Published' : 'Draft'})`,
+    });
+
     res.json({
       ...row,
       category: row.category_id
@@ -274,7 +296,19 @@ router.put('/:id', requireAdmin, async (req, res) => {
 router.delete('/:id', requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
+    const [existing] = await pool.query('SELECT title FROM lessons WHERE id = ?', [id]);
     await pool.query('DELETE FROM lessons WHERE id = ?', [id]);
+
+    // Log audit trail
+    logAudit({
+      user: req.user,
+      action: 'destroy',
+      resource_type: 'lesson',
+      resource_id: id,
+      resource_title: existing[0]?.title || `Lesson ${id}`,
+      details: `Deleted lesson ID ${id}: "${existing[0]?.title || ''}"`,
+    });
+
     res.json({ success: true, message: 'Lesson deleted successfully.' });
   } catch (err) {
     res.status(500).json({ error: 'Failed to delete lesson.' });
@@ -443,6 +477,16 @@ router.post('/:id/comments', requireAuth, async (req, res) => {
       }
     }
 
+    // Log audit trail for comment
+    logAudit({
+      user: req.user,
+      action: 'create',
+      resource_type: 'comment',
+      resource_id: result.insertId,
+      resource_title: `Lesson ${id}`,
+      details: `Posted comment on lesson ID ${id}: "${content.trim().substring(0, 45)}${content.trim().length > 45 ? '...' : ''}"`,
+    });
+
     res.status(201).json({
       id: r.id,
       lesson_id: r.lesson_id,
@@ -487,6 +531,15 @@ router.put('/:id/comments/:commentId', requireAuth, async (req, res) => {
       commentId,
     ]);
 
+    // Log audit trail
+    logAudit({
+      user: req.user,
+      action: 'update',
+      resource_type: 'comment',
+      resource_id: commentId,
+      details: `Updated comment ID ${commentId}`,
+    });
+
     res.json({ success: true, message: 'Comment updated.' });
   } catch (err) {
     res.status(500).json({ error: 'Failed to update comment.' });
@@ -507,6 +560,16 @@ router.delete('/:id/comments/:commentId', requireAuth, async (req, res) => {
     }
 
     await pool.query('DELETE FROM lesson_comments WHERE id = ?', [commentId]);
+
+    // Log audit trail
+    logAudit({
+      user: req.user,
+      action: 'destroy',
+      resource_type: 'comment',
+      resource_id: commentId,
+      details: `Deleted comment ID ${commentId}`,
+    });
+
     res.json({ success: true, message: 'Comment deleted.' });
   } catch (err) {
     res.status(500).json({ error: 'Failed to delete comment.' });
@@ -557,6 +620,16 @@ router.post('/:id/comments/:commentId/reactions', requireAuth, async (req, res) 
       JSON.stringify(reactions),
       commentId,
     ]);
+
+    // Log audit trail for reaction
+    logAudit({
+      user: req.user,
+      action: 'reaction',
+      resource_type: 'comment',
+      resource_id: commentId,
+      resource_title: rows[0].lesson_title,
+      details: `${req.user.name} ${added ? 'added' : 'removed'} reaction ${emoji} on comment in "${rows[0].lesson_title}"`,
+    });
 
     // If reaction was added, notify the comment author
     if (added) {

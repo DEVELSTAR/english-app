@@ -3,6 +3,7 @@ import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
 import { Category, Lesson } from '../types/database';
+import { formatISTDate } from '../lib/dateUtils';
 import { Sparkles, ArrowRight, Loader2 } from 'lucide-react';
 
 export default function HomePage() {
@@ -50,55 +51,60 @@ export default function HomePage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-8">
-      {/* Hero Welcome Banner */}
-      <section className="relative overflow-hidden rounded-3xl bg-gradient-to-tr from-brand-900 via-indigo-900 to-slate-900 text-white p-8 sm:p-12 shadow-xl shadow-brand-900/10">
-        <div className="relative z-10 max-w-2xl space-y-4">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-500/20 border border-brand-400/30 text-brand-200 text-xs font-semibold backdrop-blur-xs">
-            <Sparkles className="w-3.5 h-3.5 text-brand-400" />
-            <span>Spoken English Fluency Accelerator</span>
-          </div>
+      {/* Latest Lesson Hero Card */}
+      <section className="relative overflow-hidden rounded-3xl bg-gradient-to-tr from-brand-900 via-indigo-900 to-slate-900 text-white p-6 sm:p-10 shadow-xl shadow-brand-900/10">
+        {latestLesson ? (
+          <div className="relative z-10 max-w-3xl space-y-3 sm:space-y-4">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand-500/30 border border-brand-400/40 text-brand-200 text-xs font-bold backdrop-blur-xs">
+                <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                <span>Latest Class</span>
+              </span>
+              {latestLesson.category && (
+                <span className="px-2.5 py-1 rounded-full bg-white/10 border border-white/20 text-slate-200 text-xs font-semibold backdrop-blur-xs">
+                  {latestLesson.category.icon || '📚'} {latestLesson.category.name}
+                </span>
+              )}
+            </div>
 
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-tight">
-            Speak Confident English,{' '}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-300 to-indigo-200">
-              Without Hesitation.
-            </span>
-          </h1>
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight leading-tight text-white">
+              {latestLesson.title}
+            </h1>
 
-          <p className="text-sm sm:text-base text-slate-300 leading-relaxed">
-            Stop translating word-by-word from Hindi. Practice practical daily conversations with our AI Tutor & structured curriculum.
-          </p>
+            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-2xl line-clamp-2">
+              {latestLesson.topic || 'Jump into today’s spoken English practice, master sentence patterns, and practice with Akib Sir.'}
+            </p>
 
-          {/* Latest Lesson CTA Badge */}
-          {latestLesson && (
-            <div className="pt-2">
+            <div className="pt-2 flex flex-wrap items-center gap-3">
               <Link
                 to={`/lessons/${latestLesson.id}`}
-                className="inline-flex items-center gap-3 px-4 sm:px-5 py-2.5 sm:py-3 rounded-2xl bg-white/10 hover:bg-white/20 text-white backdrop-blur-md border border-white/25 shadow-lg hover:border-white/40 transition-all group active:scale-95"
+                className="inline-flex items-center gap-2 px-5 sm:px-6 py-2.5 sm:py-3 rounded-2xl bg-white text-brand-900 font-extrabold text-xs sm:text-sm shadow-xl shadow-black/20 hover:bg-brand-50 hover:scale-[1.02] active:scale-95 transition-all group cursor-pointer"
               >
-                <div className="w-7 h-7 rounded-xl bg-brand-500 text-white flex items-center justify-center text-xs shadow-xs group-hover:scale-110 transition-transform">
-                  🚀
-                </div>
-                <div className="text-left min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-extrabold uppercase tracking-widest text-brand-300">
-                      Latest Class
-                    </span>
-                    {latestLesson.category && (
-                      <span className="text-[10px] font-semibold text-slate-300">
-                        • {latestLesson.category.name}
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-xs sm:text-sm font-bold text-white group-hover:text-brand-200 transition-colors truncate max-w-[230px] sm:max-w-md">
-                    {latestLesson.title}
-                  </p>
-                </div>
-                <ArrowRight className="w-4 h-4 text-brand-300 group-hover:translate-x-1 group-hover:text-white transition-all shrink-0 ml-1" />
+                <span>Start Learning Now</span>
+                <ArrowRight className="w-4 h-4 text-brand-600 group-hover:translate-x-1 transition-transform" />
               </Link>
+
+              {latestLesson.lesson_date && (
+                <span className="text-xs text-brand-200/80 font-medium font-mono">
+                  {formatISTDate(latestLesson.lesson_date)}
+                </span>
+              )}
             </div>
-          )}
-        </div>
+          </div>
+        ) : (
+          <div className="relative z-10 max-w-2xl space-y-3">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-500/20 border border-brand-400/30 text-brand-200 text-xs font-semibold backdrop-blur-xs">
+              <Sparkles className="w-3.5 h-3.5 text-brand-400" />
+              <span>FluentEdge English Academy</span>
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
+              Welcome to Your Learning Space
+            </h1>
+            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+              Explore the structured categories below to build daily fluency, master vocabulary, and practice conversations.
+            </p>
+          </div>
+        )}
 
         {/* Decorative background circles */}
         <div className="absolute -right-20 -bottom-20 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl pointer-events-none" />

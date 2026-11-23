@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import pool from '../config/db.js';
 import { requireAuth, requireAdmin } from '../middleware/auth.js';
+import { logAudit } from '../utils/auditLogger.js';
 
 const router = Router();
 
@@ -78,6 +79,16 @@ router.post('/', requireAuth, requireAdmin, async (req, res) => {
       [cleanName, slug, categoryIcon, categoryDesc, order]
     );
 
+    // Log audit trail
+    logAudit({
+      user: req.user,
+      action: 'create',
+      resource_type: 'category',
+      resource_id: result.insertId,
+      resource_title: cleanName,
+      details: `Created category: "${cleanName}" (${categoryIcon})`,
+    });
+
     res.status(201).json({
       id: result.insertId,
       name: cleanName,
@@ -127,6 +138,16 @@ router.put('/:id', requireAuth, requireAdmin, async (req, res) => {
       [newName, slug, newIcon, newDesc, newOrder, categoryId]
     );
 
+    // Log audit trail
+    logAudit({
+      user: req.user,
+      action: 'update',
+      resource_type: 'category',
+      resource_id: categoryId,
+      resource_title: newName,
+      details: `Updated category: "${newName}" (${newIcon})`,
+    });
+
     res.json({
       id: categoryId,
       name: newName,
@@ -153,6 +174,15 @@ router.delete('/:id', requireAuth, requireAdmin, async (req, res) => {
     if (result.affectedRows === 0) {
       return res.status(404).json({ error: 'Category not found.' });
     }
+
+    // Log audit trail
+    logAudit({
+      user: req.user,
+      action: 'destroy',
+      resource_type: 'category',
+      resource_id: categoryId,
+      details: `Deleted category ID ${categoryId}`,
+    });
 
     res.json({ success: true, message: 'Category deleted successfully.' });
   } catch (err) {

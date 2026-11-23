@@ -112,6 +112,7 @@ export default function AdminHistoryPage() {
             <option value="all">All Resources</option>
             <option value="auth">Authentication</option>
             <option value="lesson">Curriculum Lessons</option>
+            <option value="category">Categories</option>
             <option value="comment">Discussion Comments</option>
             <option value="note">Study Notes</option>
             <option value="user">User Management</option>
@@ -131,6 +132,7 @@ export default function AdminHistoryPage() {
             <option value="create">Create</option>
             <option value="update">Update</option>
             <option value="destroy">Delete</option>
+            <option value="reaction">Reaction</option>
           </select>
         </div>
 
@@ -168,6 +170,7 @@ export default function AdminHistoryPage() {
                 {log.action === 'create' && '➕'}
                 {log.action === 'update' && '✏️'}
                 {log.action === 'destroy' && '🗑️'}
+                {log.action === 'reaction' && '❤️'}
               </div>
 
               <div className="flex-1 space-y-1">

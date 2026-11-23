@@ -4,13 +4,9 @@ import { useAuth } from '../context/AuthContext';
 import { getProfileIconMeta } from '../lib/profileIcons';
 import NotificationBell from './notifications/NotificationBell';
 import {
-  Compass,
-  BookOpen,
-  Layers,
   FileText,
   User,
   LogOut,
-  Menu,
   X,
   ChevronDown,
   ChevronRight,
@@ -44,36 +40,6 @@ export default function Navbar() {
     };
   }, [mobileMenuOpen]);
 
-  const isActive = (path: string) => {
-    if (path === '/' && location.pathname === '/') return true;
-    if (path !== '/' && location.pathname.startsWith(path)) return true;
-    return false;
-  };
-
-  const navLinks = [
-    {
-      name: 'Dashboard',
-      path: '/',
-      icon: Compass,
-      description: 'Overview & progress',
-      iconColor: 'bg-indigo-50 text-indigo-600',
-    },
-    {
-      name: 'Lessons',
-      path: '/lessons',
-      icon: BookOpen,
-      description: 'Classes, grammar & vocabulary',
-      iconColor: 'bg-emerald-50 text-emerald-600',
-    },
-    {
-      name: 'My Notes',
-      path: '/notes',
-      icon: FileText,
-      description: 'Personal & shared notes',
-      iconColor: 'bg-sky-50 text-sky-600',
-    },
-  ];
-
   const handleLogout = () => {
     logout();
     navigate('/');
@@ -102,31 +68,11 @@ export default function Navbar() {
             </div>
           </Link>
 
-          {/* Desktop Navigation Links */}
-          <nav className="hidden md:flex items-center gap-1 bg-slate-100/70 p-1 rounded-2xl border border-slate-200/50">
-            {navLinks.map((link) => {
-              const active = isActive(link.path);
-              const Icon = link.icon;
-              return (
-                <Link
-                  key={link.path}
-                  to={link.path}
-                  className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all ${
-                    active
-                      ? 'bg-white text-brand-600 shadow-sm border border-slate-200/60'
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
-                  }`}
-                >
-                  <Icon className={`w-3.5 h-3.5 ${active ? 'text-brand-600' : 'text-slate-400'}`} />
-                  <span>{link.name}</span>
-                </Link>
-              );
-            })}
-          </nav>
-
           {/* Desktop Right Header: Profile / Auth Actions */}
           <div className="hidden md:flex items-center gap-3">
-            {currentUser && <NotificationBell />}
+            {/* Notification bell for students only (admins don't need notifications) */}
+            {isStudent && <NotificationBell />}
+
             {currentUser ? (
               <div className="relative">
                 <button
@@ -166,7 +112,7 @@ export default function Navbar() {
                           className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-brand-600 transition"
                         >
                           <User className="w-4 h-4 text-slate-400" />
-                          <span>Profile & Passwords</span>
+                          <span>Profile & Settings</span>
                         </Link>
                         <Link
                           to="/notes"
@@ -177,6 +123,17 @@ export default function Navbar() {
                           <span>My Study Notes</span>
                         </Link>
                       </>
+                    )}
+
+                    {isAdmin && (
+                      <Link
+                        to="/admin"
+                        onClick={() => setDropdownOpen(false)}
+                        className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-brand-700 hover:bg-brand-50 transition"
+                      >
+                        <User className="w-4 h-4 text-brand-600" />
+                        <span>Admin Console</span>
+                      </Link>
                     )}
 
                     <div className="border-t border-slate-100 my-1" />
@@ -210,15 +167,16 @@ export default function Navbar() {
             )}
           </div>
 
-          {/* Mobile Action: Notification Bell & Profile Avatar */}
+          {/* Mobile Action: Notification Bell (for students) & Profile Avatar */}
           <div className="flex md:hidden items-center gap-2">
-            {currentUser && <NotificationBell />}
+            {isStudent && <NotificationBell />}
+
             {currentUser ? (
               <button
                 type="button"
                 onClick={() => setMobileMenuOpen(true)}
                 className={`w-9 h-9 rounded-full flex items-center justify-center text-base shadow-xs border border-slate-200 cursor-pointer active:scale-95 transition-transform ${iconMeta.color}`}
-                aria-label="Open student menu"
+                aria-label="Open profile menu"
               >
                 {iconMeta.emoji}
               </button>
@@ -270,9 +228,8 @@ export default function Navbar() {
               </button>
             </div>
 
-            {/* Drawer Body (Scrollable) */}
+            {/* Drawer Body (Scrollable Profile Actions) */}
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
-              {/* Authenticated Student Card */}
               {currentUser ? (
                 <div className="p-3.5 rounded-2xl bg-gradient-to-br from-brand-50/80 via-white to-indigo-50/50 border border-brand-100/80 shadow-2xs space-y-3">
                   <div className="flex items-center gap-3">
@@ -285,7 +242,7 @@ export default function Navbar() {
                       <div className="flex items-center gap-1.5 flex-wrap">
                         <p className="text-sm font-black text-slate-900 truncate">{currentUser.name}</p>
                         <span className="text-[9px] font-bold px-1.5 py-0.2 bg-brand-100 text-brand-700 rounded-md">
-                          {currentUser.role === 2 ? 'Admin' : 'Student'}
+                          {currentUser.role === 2 ? 'Super Admin' : currentUser.role === 1 ? 'Admin' : 'Student'}
                         </span>
                       </div>
                       <p className="text-xs text-slate-500 truncate mt-0.5 font-mono">{currentUser.email_address}</p>
@@ -293,17 +250,47 @@ export default function Navbar() {
                   </div>
 
                   {isStudent && (
-                    <Link
-                      to="/profile"
-                      onClick={() => setMobileMenuOpen(false)}
-                      className="w-full py-1.5 px-3 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-700 hover:border-brand-300 hover:text-brand-600 transition flex items-center justify-between shadow-2xs"
-                    >
-                      <span className="flex items-center gap-1.5">
-                        <User className="w-3.5 h-3.5 text-brand-600" />
-                        <span>Profile & Settings</span>
-                      </span>
-                      <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
-                    </Link>
+                    <div className="space-y-1.5 pt-1">
+                      <Link
+                        to="/profile"
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="w-full py-2 px-3 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-700 hover:border-brand-300 hover:text-brand-600 transition flex items-center justify-between shadow-2xs"
+                      >
+                        <span className="flex items-center gap-2">
+                          <User className="w-3.5 h-3.5 text-brand-600" />
+                          <span>Profile & Settings</span>
+                        </span>
+                        <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+                      </Link>
+
+                      <Link
+                        to="/notes"
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="w-full py-2 px-3 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-700 hover:border-brand-300 hover:text-brand-600 transition flex items-center justify-between shadow-2xs"
+                      >
+                        <span className="flex items-center gap-2">
+                          <FileText className="w-3.5 h-3.5 text-brand-600" />
+                          <span>My Study Notes</span>
+                        </span>
+                        <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+                      </Link>
+                    </div>
+                  )}
+
+                  {isAdmin && (
+                    <div className="pt-1">
+                      <Link
+                        to="/admin"
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="w-full py-2 px-3 rounded-xl bg-brand-600 text-white text-xs font-bold hover:bg-brand-700 transition flex items-center justify-between shadow-2xs"
+                      >
+                        <span className="flex items-center gap-2">
+                          <User className="w-3.5 h-3.5" />
+                          <span>Admin Console</span>
+                        </span>
+                        <ChevronRight className="w-3.5 h-3.5 text-white/70" />
+                      </Link>
+                    </div>
                   )}
                 </div>
               ) : (
@@ -335,47 +322,6 @@ export default function Navbar() {
                   </div>
                 </div>
               )}
-
-              {/* Navigation Links List */}
-              <div className="space-y-1.5 pt-1">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-2">Navigation</span>
-
-                {navLinks.map((link) => {
-                  const active = isActive(link.path);
-                  const Icon = link.icon;
-
-                  return (
-                    <Link
-                      key={link.path}
-                      to={link.path}
-                      onClick={() => setMobileMenuOpen(false)}
-                      className={`flex items-center justify-between p-2.5 rounded-2xl transition-all cursor-pointer ${
-                        active
-                          ? 'bg-brand-50/80 border border-brand-200/80 shadow-2xs text-brand-900 font-bold'
-                          : 'hover:bg-slate-50 text-slate-700 font-medium'
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div
-                          className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
-                            active ? 'bg-brand-600 text-white shadow-2xs' : link.iconColor
-                          }`}
-                        >
-                          <Icon className="w-4 h-4" />
-                        </div>
-                        <div>
-                          <p className={`text-xs leading-tight ${active ? 'font-black text-brand-900' : 'font-bold text-slate-800'}`}>
-                            {link.name}
-                          </p>
-                          <p className="text-[10px] text-slate-400 mt-0.5 leading-none">{link.description}</p>
-                        </div>
-                      </div>
-
-                      <ChevronRight className={`w-4 h-4 ${active ? 'text-brand-600' : 'text-slate-300'}`} />
-                    </Link>
-                  );
-                })}
-              </div>
             </div>
 
             {/* Drawer Footer */}
