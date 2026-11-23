@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { api } from '../services/api';
 import { Lesson, Category } from '../types/database';
-import { formatISTDate } from '../lib/dateUtils';
+import { formatISTDate, formatLessonDisplayDate } from '../lib/dateUtils';
 import { BookOpen, Search, ArrowRight, Loader2, Calendar, Sparkles } from 'lucide-react';
 
 export default function LessonsPage() {
@@ -139,7 +139,7 @@ export default function LessonsPage() {
                     </span>
                     <span className="text-[11px] text-slate-400 font-mono flex items-center gap-1 shrink-0">
                       <Calendar className="w-3 h-3" />
-                      <span>{formatISTDate(lesson.lesson_date)}</span>
+                      <span>{formatLessonDisplayDate(lesson)}</span>
                     </span>
                   </div>
 

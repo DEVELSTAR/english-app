@@ -3,7 +3,7 @@ import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
 import { Category, Lesson } from '../types/database';
-import { formatISTDate } from '../lib/dateUtils';
+import { formatISTDate, formatLessonDisplayDate } from '../lib/dateUtils';
 import { Sparkles, ArrowRight, Loader2 } from 'lucide-react';
 import PrivateTutorCard from '../components/home/PrivateTutorCard';
 
@@ -85,9 +85,9 @@ export default function HomePage() {
                 <ArrowRight className="w-4 h-4 text-brand-600 group-hover:translate-x-1 transition-transform" />
               </Link>
 
-              {latestLesson.lesson_date && (
+              {latestLesson && (
                 <span className="text-xs text-brand-200/80 font-medium font-mono">
-                  {formatISTDate(latestLesson.lesson_date)}
+                  {formatLessonDisplayDate(latestLesson)}
                 </span>
               )}
             </div>

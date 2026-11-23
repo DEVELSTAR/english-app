@@ -187,8 +187,8 @@ export default function AdminHistoryPage() {
                     </span>
                   </div>
 
-                  <span className="text-[11px] font-mono text-slate-400">
-                    {formatISTDateTime(log.created_at)}
+                  <span className="text-[11px] font-mono text-slate-400" title={formatISTDateTime(log.created_at)}>
+                    {formatTimeAgo(log.created_at)}
                   </span>
                 </div>
 

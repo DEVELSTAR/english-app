@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../../services/api';
 import { Lesson } from '../../types/database';
-import { formatISTDate } from '../../lib/dateUtils';
+import { formatISTDate, formatLessonDisplayDate } from '../../lib/dateUtils';
 import {
   BookOpen,
   Layers,
@@ -161,7 +161,7 @@ export default function AdminDashboardPage() {
                       <span className="font-bold text-slate-900 block">{lesson.title}</span>
                     </td>
                     <td className="py-3.5 px-5 font-mono text-slate-500 text-xs">
-                      {formatISTDate(lesson.lesson_date)}
+                      {formatLessonDisplayDate(lesson)}
                     </td>
                     <td className="py-3.5 px-5">
                       {lesson.category ? (

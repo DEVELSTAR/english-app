@@ -4,6 +4,7 @@ import { Lesson, LessonType, LessonStatus } from '../../types/database';
 import { api } from '../../services/api';
 import CategorySelect from './CategorySelect';
 import { ArrowLeft, Save, Trash2, Eye, Code, Loader2 } from 'lucide-react';
+import { getTodayISTDateString } from '../../lib/dateUtils';
 
 interface LessonFormProps {
   initialLesson?: Partial<Lesson>;
@@ -15,7 +16,7 @@ export default function LessonForm({ initialLesson = {}, isEditing = false }: Le
 
   const [title, setTitle] = useState(initialLesson.title || '');
   const [lessonDate, setLessonDate] = useState(
-    initialLesson.lesson_date ? String(initialLesson.lesson_date).split('T')[0] : new Date().toISOString().split('T')[0]
+    initialLesson.lesson_date ? String(initialLesson.lesson_date).split('T')[0] : getTodayISTDateString()
   );
   const [categoryId, setCategoryId] = useState<number | null>(
     initialLesson.category_id ?? null

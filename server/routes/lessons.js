@@ -4,6 +4,30 @@ import { requireAuth, requireAdmin } from '../middleware/auth.js';
 import { createNotification, notifyAllUsers } from '../utils/notifications.js';
 import { logAudit } from '../utils/auditLogger.js';
 
+export function toISTDateString(val) {
+  if (!val) {
+    return new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Asia/Kolkata',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).format(new Date());
+  }
+  if (typeof val === 'string') {
+    const match = val.match(/^(\d{4}-\d{2}-\d{2})/);
+    if (match) return match[1];
+  }
+  if (val instanceof Date) {
+    return new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Asia/Kolkata',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).format(val);
+  }
+  return String(val).split('T')[0];
+}
+
 const router = Router();
 
 // 1. List Lessons (Public or Authenticated)
@@ -51,9 +75,7 @@ router.get('/', async (req, res) => {
       lessons.map((l) => ({
         id: l.id,
         title: l.title,
-        lesson_date: l.lesson_date
-          ? (l.lesson_date instanceof Date ? l.lesson_date.toISOString().split('T')[0] : String(l.lesson_date).split('T')[0])
-          : null,
+        lesson_date: toISTDateString(l.lesson_date),
         topic: l.topic,
         status: l.status,
         author_id: l.author_id,
@@ -98,9 +120,7 @@ router.get('/:id', async (req, res) => {
     const row = rows[0];
     const lesson = {
       ...row,
-      lesson_date: row.lesson_date
-        ? (row.lesson_date instanceof Date ? row.lesson_date.toISOString().split('T')[0] : String(row.lesson_date).split('T')[0])
-        : null,
+      lesson_date: toISTDateString(row.lesson_date),
       category: row.category_id
         ? {
             id: row.category_id,
@@ -154,10 +174,11 @@ router.get('/:id', async (req, res) => {
 router.post('/', requireAdmin, async (req, res) => {
   try {
     const { title, lesson_date, topic, status, category_id, lesson_type, content } = req.body;
-    if (!title?.trim() || !lesson_date) {
-      return res.status(400).json({ error: 'Title and lesson date are required.' });
+    if (!title?.trim()) {
+      return res.status(400).json({ error: 'Title is required.' });
     }
 
+    const finalLessonDate = toISTDateString(lesson_date);
     const catId = category_id !== undefined && category_id !== null && category_id !== '' ? parseInt(category_id, 10) : null;
     const lType = lesson_type !== undefined ? parseInt(lesson_type, 10) : 0;
 
@@ -166,7 +187,7 @@ router.post('/', requireAdmin, async (req, res) => {
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
       [
         title.trim(),
-        lesson_date,
+        finalLessonDate,
         topic?.trim() || null,
         status ?? 0,
         req.user.id,
@@ -232,6 +253,7 @@ router.put('/:id', requireAdmin, async (req, res) => {
 
     const catId = category_id !== undefined && category_id !== null && category_id !== '' ? parseInt(category_id, 10) : null;
     const lType = lesson_type !== undefined ? parseInt(lesson_type, 10) : 0;
+    const finalLessonDate = toISTDateString(lesson_date);
 
     await pool.query(
       `UPDATE lessons
@@ -239,7 +261,7 @@ router.put('/:id', requireAdmin, async (req, res) => {
        WHERE id = ?`,
       [
         title.trim(),
-        lesson_date,
+        finalLessonDate,
         topic?.trim() || null,
         status ?? 0,
         catId,

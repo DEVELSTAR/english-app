@@ -21,6 +21,8 @@ const pool = mysql.createPool({
   queueLimit: 0,
   enableKeepAlive: true,
   keepAliveInitialDelay: 10000,
+  dateStrings: true, // Returns DATE and DATETIME as literal strings to prevent UTC/local timezone shifts
+  timezone: '+05:30', // Indian Standard Time (IST)
 });
 
 // Test connection helper

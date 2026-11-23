@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { api } from '../services/api';
 import { Lesson } from '../types/database';
-import { formatISTDate } from '../lib/dateUtils';
+import { formatISTDate, formatLessonDisplayDate } from '../lib/dateUtils';
 import LessonSidebar from '../components/sidebar/LessonSidebar';
 import StudentActions from '../components/lessons/StudentActions';
 import { ArrowLeft, ArrowRight, Calendar, BookOpen, Loader2 } from 'lucide-react';
@@ -88,7 +88,7 @@ export default function LessonDetailPage() {
 
                 <span className="text-xs text-slate-400 font-mono flex items-center gap-1">
                   <Calendar className="w-3 h-3" />
-                  <span>{formatISTDate(lesson.lesson_date)}</span>
+                  <span>{formatLessonDisplayDate(lesson)}</span>
                 </span>
               </div>
 
