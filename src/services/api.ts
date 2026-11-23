@@ -179,6 +179,8 @@ export const api = {
   clearChatHistory: (lessonId: number) => request<{ success: boolean }>(`/api/lessons/${lessonId}/chat`, { method: 'DELETE' }),
   getPrivateChatHistory: () => request<any[]>('/api/ai/history'),
   clearPrivateChatHistory: () => request<{ success: boolean; message: string }>('/api/ai/history', { method: 'DELETE' }),
+  deleteChatMessage: (messageId: number) =>
+    request<{ success: boolean; message: string }>(`/api/ai/messages/${messageId}`, { method: 'DELETE' }),
   sendAIChat: (data: { lesson_id?: number | null; messages: any[]; user_message?: string; audio_data?: any }) =>
     request<{ reply: string; usedModel: string }>('/api/ai/chat', {
       method: 'POST',

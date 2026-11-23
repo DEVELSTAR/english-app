@@ -24,10 +24,14 @@ export function getGeminiApiKey() {
     return key.trim();
   }
 
+  const homeDir = process.env.HOME || '/home/akibdemo';
   const candidatePaths = [
     path.resolve(__dirname, '../../.env'),
     path.resolve(__dirname, '../.env'),
     path.resolve(process.cwd(), '.env'),
+    path.resolve(homeDir, 'english-app/.env'),
+    path.resolve(homeDir, '.env'),
+    '/home/akibdemo/english-app/.env',
   ];
 
   for (const envPath of candidatePaths) {
@@ -215,6 +219,29 @@ router.delete('/history', requireAuth, async (req, res) => {
   } catch (err) {
     console.error('Clear private chat history error:', err);
     res.status(500).json({ error: 'Failed to clear chat history.' });
+  }
+});
+
+// 4. Delete Single Chat Message (works for both private and lesson chat)
+router.delete('/messages/:id', requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const [result] = await pool.query(
+      'DELETE FROM lesson_chat_messages WHERE id = ? AND user_id = ?',
+      [id, req.user.id]
+    );
+
+    if (result.affectedRows === 0) {
+      // Check if message belongs to a conversation the user had or if admin
+      if (req.user.role === 'admin') {
+        await pool.query('DELETE FROM lesson_chat_messages WHERE id = ?', [id]);
+      }
+    }
+
+    res.json({ success: true, message: 'Chat message deleted successfully.' });
+  } catch (err) {
+    console.error('Delete chat message error:', err);
+    res.status(500).json({ error: 'Failed to delete message.' });
   }
 });
 

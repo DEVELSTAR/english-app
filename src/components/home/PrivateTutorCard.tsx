@@ -120,6 +120,19 @@ export default function PrivateTutorCard() {
     }
   };
 
+  const handleDeleteMessage = async (msgId: number) => {
+    try {
+      await api.deleteChatMessage(msgId);
+      setMessages((prev) => prev.filter((m) => m.id !== msgId));
+      if (speakingMessageId === msgId) {
+        stopSpeaking();
+        setSpeakingMessageId(null);
+      }
+    } catch (err: any) {
+      alert(err.message || 'Failed to delete message.');
+    }
+  };
+
   const handlePlayTTS = (msgId: number, content: string) => {
     if (speakingMessageId === msgId) {
       stopSpeaking();
@@ -224,11 +237,12 @@ export default function PrivateTutorCard() {
           <button
             type="button"
             onClick={handleClearHistory}
-            className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-200/60 rounded-xl transition cursor-pointer"
             title="Clear private chat history"
             aria-label="Clear chat"
           >
-            <Trash2 className="w-4 h-4" />
+            <Trash2 className="w-3.5 h-3.5" />
+            <span>Clear Chat</span>
           </button>
         )}
       </div>
@@ -336,26 +350,51 @@ export default function PrivateTutorCard() {
                     >
                       <p className="whitespace-pre-wrap">{msg.content}</p>
 
+                      {isUser && (
+                        <div className="pt-1.5 mt-1.5 border-t border-brand-500/40 flex items-center justify-end">
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteMessage(msg.id)}
+                            className="inline-flex items-center gap-1 text-[10px] text-brand-200 hover:text-white transition cursor-pointer"
+                            title="Delete this message"
+                          >
+                            <Trash2 className="w-2.5 h-2.5" />
+                            <span>Delete</span>
+                          </button>
+                        </div>
+                      )}
+
                       {!isUser && (
                         <div className="pt-2 mt-2 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-400">
                           <span className="font-semibold text-slate-500">Akib Sir</span>
-                          <button
-                            type="button"
-                            onClick={() => handlePlayTTS(msg.id, msg.content)}
-                            className="inline-flex items-center gap-1 text-brand-600 hover:text-brand-700 font-semibold cursor-pointer"
-                          >
-                            {isSpeakingNow ? (
-                              <>
-                                <VolumeX className="w-3 h-3 text-rose-500" />
-                                <span className="text-rose-500">Stop</span>
-                              </>
-                            ) : (
-                              <>
-                                <Volume2 className="w-3 h-3" />
-                                <span>Listen</span>
-                              </>
-                            )}
-                          </button>
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => handlePlayTTS(msg.id, msg.content)}
+                              className="inline-flex items-center gap-1 text-brand-600 hover:text-brand-700 font-semibold cursor-pointer"
+                            >
+                              {isSpeakingNow ? (
+                                <>
+                                  <VolumeX className="w-3 h-3 text-rose-500" />
+                                  <span className="text-rose-500">Stop</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Volume2 className="w-3 h-3" />
+                                  <span>Listen</span>
+                                </>
+                              )}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteMessage(msg.id)}
+                              className="inline-flex items-center gap-1 text-slate-400 hover:text-rose-600 transition cursor-pointer"
+                              title="Delete this message"
+                            >
+                              <Trash2 className="w-2.5 h-2.5" />
+                              <span>Delete</span>
+                            </button>
+                          </div>
                         </div>
                       )}
                     </div>
