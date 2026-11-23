@@ -3,6 +3,7 @@ import { useAuth } from '../../context/AuthContext';
 import { getProfileIconMeta } from '../../lib/profileIcons';
 import { api } from '../../services/api';
 import { Lesson, LessonChatMessage } from '../../types/database';
+import { MarkdownContent } from '../common/MarkdownContent';
 import {
   speakText,
   stopSpeaking,
@@ -272,7 +273,11 @@ export default function AiTutor({ lesson }: AiTutorProps) {
                       : 'bg-white text-slate-800 border border-slate-200/90 shadow-2xs'
                   }`}
                 >
-                  <p className="whitespace-pre-wrap">{msg.content}</p>
+                  {isUser ? (
+                    <p className="whitespace-pre-wrap">{msg.content}</p>
+                  ) : (
+                    <MarkdownContent content={msg.content} />
+                  )}
 
                   {isUser && (
                     <div className="pt-1.5 mt-1.5 border-t border-brand-500/40 flex items-center justify-end">
