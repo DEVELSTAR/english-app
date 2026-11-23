@@ -1,7 +1,15 @@
 import { Router } from 'express';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import pool from '../config/db.js';
 import { requireAuth } from '../middleware/auth.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+dotenv.config();
 
 const router = Router();
 
@@ -10,7 +18,6 @@ const DEFAULT_MODELS = [
   'gemini-3.8-flash',
   'gemini-3.7-flash',
   'gemini-2.5-flash',
-  'gemini-2.0-flash',
 ];
 
 const DEFAULT_SYSTEM_INSTRUCTION = `

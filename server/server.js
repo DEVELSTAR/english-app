@@ -13,10 +13,12 @@ import notificationsRoutes from './routes/notifications.js';
 import aiRoutes from './routes/ai.js';
 import historyRoutes from './routes/history.js';
 
-dotenv.config();
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// Explicitly load .env from project root regardless of Passenger working directory
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
+dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;

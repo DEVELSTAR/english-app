@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useAuth } from '../../context/AuthContext';
+import { getProfileIconMeta } from '../../lib/profileIcons';
 import { api } from '../../services/api';
 import { Lesson, LessonChatMessage } from '../../types/database';
 import {
@@ -27,6 +29,9 @@ interface AiTutorProps {
 }
 
 export default function AiTutor({ lesson }: AiTutorProps) {
+  const { currentUser } = useAuth();
+  const userIconMeta = getProfileIconMeta(currentUser?.profile_icon);
+
   const [messages, setMessages] = useState<LessonChatMessage[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -233,11 +238,16 @@ export default function AiTutor({ lesson }: AiTutorProps) {
                 className={`flex gap-2 items-start ${isUser ? 'flex-row-reverse' : 'flex-row'}`}
               >
                 <div
-                  className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5 ${
-                    isUser ? 'bg-slate-700 text-white' : 'bg-brand-600 text-white'
+                  className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 mt-0.5 shadow-2xs border border-slate-200/50 ${
+                    isUser ? userIconMeta.color : 'bg-brand-600 text-white'
                   }`}
+                  title={isUser ? currentUser?.name || 'You' : 'Akib Sir (AI Tutor)'}
                 >
-                  {isUser ? <User className="w-3.5 h-3.5" /> : <Bot className="w-3.5 h-3.5" />}
+                  {isUser ? (
+                    <span className="text-xs leading-none">{userIconMeta.emoji}</span>
+                  ) : (
+                    <Bot className="w-3.5 h-3.5" />
+                  )}
                 </div>
 
                 <div
