@@ -669,6 +669,17 @@ router.delete('/:id/chat', requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
     await pool.query('DELETE FROM lesson_chat_messages WHERE lesson_id = ? AND user_id = ?', [id, req.user.id]);
+
+    res.locals.auditLogged = true;
+    logAudit({
+      user: req.user,
+      action: 'destroy',
+      resource_type: 'chat',
+      resource_id: id,
+      resource_title: `Lesson #${id}`,
+      details: `Cleared AI chat history for lesson #${id}`,
+    });
+
     res.json({ success: true, message: 'Chat history cleared.' });
   } catch (err) {
     res.status(500).json({ error: 'Failed to clear chat history.' });

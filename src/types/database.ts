@@ -110,8 +110,8 @@ export interface ActivityRecord {
   user_name: string;
   user_email: string;
   user_role: number;
-  action: 'signup' | 'login' | 'create' | 'update' | 'destroy' | 'reaction';
-  resource_type: 'auth' | 'note' | 'comment' | 'lesson' | 'chat' | 'user' | 'reaction' | 'category';
+  action: 'signup' | 'login' | 'create' | 'update' | 'destroy' | 'reaction' | 'chat';
+  resource_type: 'auth' | 'note' | 'comment' | 'lesson' | 'chat' | 'user' | 'reaction' | 'category' | 'notification' | 'student_activity';
   resource_id?: string | null;
   resource_title?: string | null;
   details: string;

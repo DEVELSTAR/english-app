@@ -2,6 +2,7 @@ import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import pool from '../config/db.js';
 import { generateToken, requireAuth, requireAdmin, requireSuperAdmin } from '../middleware/auth.js';
+import { logAudit } from '../utils/auditLogger.js';
 
 const router = Router();
 
@@ -48,6 +49,15 @@ router.post('/register', async (req, res) => {
     };
 
     const token = generateToken(user);
+
+    // Audit log student registration
+    logAudit({
+      user,
+      action: 'signup',
+      resource_type: 'auth',
+      details: `New student registered account: ${user.name} (${cleanEmail})`,
+    });
+
     res.status(201).json({ user, token });
   } catch (err) {
     console.error('Register error:', err);
@@ -81,6 +91,17 @@ router.post('/login', async (req, res) => {
     }
 
     const token = generateToken(user);
+
+    // Audit log student sign-in (only students, not admin/super admin)
+    if (user.role === 0 || user.role === 'student' || user.role === 'user') {
+      logAudit({
+        user,
+        action: 'login',
+        resource_type: 'auth',
+        details: `Student signed in: ${user.name} (${cleanEmail})`,
+      });
+    }
+
     res.json({
       user: {
         id: user.id,
@@ -121,6 +142,17 @@ router.post('/admin-login', async (req, res) => {
     }
 
     const token = generateToken(user);
+
+    // Audit log student sign-in (only students, not admin/super admin)
+    if (user.role === 0 || user.role === 'student' || user.role === 'user') {
+      logAudit({
+        user,
+        action: 'login',
+        resource_type: 'auth',
+        details: `Student signed in: ${user.name} (${cleanEmail})`,
+      });
+    }
+
     res.json({
       user: {
         id: user.id,

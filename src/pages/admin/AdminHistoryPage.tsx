@@ -70,7 +70,7 @@ export default function AdminHistoryPage() {
             <span>Audit Trail & Activity Log</span>
           </h1>
           <p className="text-xs text-slate-500 mt-1">
-            Real-time record of logins, lesson modifications, student registrations, notes, and comments.
+            Real-time audit trail of student activities (signups, logins, AI Tutor chats, study notes, comments, deletions, and reactions). Admin actions are excluded.
           </p>
         </div>
 
@@ -110,12 +110,13 @@ export default function AdminHistoryPage() {
             className="w-full px-3 py-1.5 rounded-xl border border-slate-200 focus:outline-none focus:border-brand-600"
           >
             <option value="all">All Resources</option>
-            <option value="auth">Authentication</option>
-            <option value="lesson">Curriculum Lessons</option>
-            <option value="category">Categories</option>
+            <option value="auth">Authentication (Login/Signup)</option>
+            <option value="chat">AI Tutor Conversations</option>
             <option value="comment">Discussion Comments</option>
             <option value="note">Study Notes</option>
-            <option value="user">User Management</option>
+            <option value="lesson">Curriculum Lessons & Reactions</option>
+            <option value="notification">Notifications</option>
+            <option value="user">Student Profile</option>
           </select>
         </div>
 
@@ -129,6 +130,7 @@ export default function AdminHistoryPage() {
             <option value="all">All Actions</option>
             <option value="login">Login</option>
             <option value="signup">Sign Up</option>
+            <option value="chat">AI Chat</option>
             <option value="create">Create</option>
             <option value="update">Update</option>
             <option value="destroy">Delete</option>
@@ -167,10 +169,12 @@ export default function AdminHistoryPage() {
               <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 shrink-0 font-bold">
                 {log.action === 'login' && '🔑'}
                 {log.action === 'signup' && '🎉'}
+                {log.action === 'chat' && '🤖'}
                 {log.action === 'create' && '➕'}
                 {log.action === 'update' && '✏️'}
                 {log.action === 'destroy' && '🗑️'}
                 {log.action === 'reaction' && '❤️'}
+                {!['login', 'signup', 'chat', 'create', 'update', 'destroy', 'reaction'].includes(log.action) && '📋'}
               </div>
 
               <div className="flex-1 space-y-1">

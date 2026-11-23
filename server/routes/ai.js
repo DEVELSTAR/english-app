@@ -6,6 +6,7 @@ import fs from 'fs';
 import { fileURLToPath } from 'url';
 import pool from '../config/db.js';
 import { requireAuth } from '../middleware/auth.js';
+import { logAudit } from '../utils/auditLogger.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -194,6 +195,19 @@ router.post('/chat', requireAuth, async (req, res) => {
       console.error('Could not save chat message to DB:', dbErr);
     }
 
+    // Log student audit trail
+    res.locals.auditLogged = true;
+    logAudit({
+      user: req.user,
+      action: 'chat',
+      resource_type: 'chat',
+      resource_id: lesson_id || null,
+      resource_title: lesson_id ? `Lesson #${lesson_id}` : 'Private AI Tutor',
+      details: user_message
+        ? `Asked Akib Sir: "${user_message.substring(0, 75)}${user_message.length > 75 ? '...' : ''}"`
+        : 'Practiced voice speaking with Akib Sir',
+    });
+
     res.json({ reply, usedModel });
   } catch (err) {
     console.error('AI chat endpoint error:', err);
@@ -219,6 +233,16 @@ router.get('/history', requireAuth, async (req, res) => {
 router.delete('/history', requireAuth, async (req, res) => {
   try {
     await pool.query('DELETE FROM lesson_chat_messages WHERE user_id = ? AND lesson_id IS NULL', [req.user.id]);
+
+    res.locals.auditLogged = true;
+    logAudit({
+      user: req.user,
+      action: 'destroy',
+      resource_type: 'chat',
+      resource_title: 'Private AI Tutor',
+      details: 'Cleared private tutor conversation history',
+    });
+
     res.json({ success: true, message: 'Private chat history cleared.' });
   } catch (err) {
     console.error('Clear private chat history error:', err);
@@ -237,10 +261,19 @@ router.delete('/messages/:id', requireAuth, async (req, res) => {
 
     if (result.affectedRows === 0) {
       // Check if message belongs to a conversation the user had or if admin
-      if (req.user.role === 'admin') {
+      if (req.user.role === 'admin' || req.user.role === 1 || req.user.role === 2) {
         await pool.query('DELETE FROM lesson_chat_messages WHERE id = ?', [id]);
       }
     }
+
+    res.locals.auditLogged = true;
+    logAudit({
+      user: req.user,
+      action: 'destroy',
+      resource_type: 'chat',
+      resource_id: id,
+      details: `Deleted AI chat message #${id}`,
+    });
 
     res.json({ success: true, message: 'Chat message deleted successfully.' });
   } catch (err) {
