@@ -9,6 +9,8 @@
     "db:start": "docker start english-app-mysql 2>/dev/null || docker run -d --name english-app-mysql -p 3306:3306 -e MYSQL_ALLOW_EMPTY_PASSWORD=yes -e MYSQL_DATABASE=learn_english_db mysql:8.0",
     "db:stop": "docker stop english-app-mysql",
     "db:seed": "docker exec -i english-app-mysql mysql -uroot learn_english_db < schema.sql",
+    "db:backup": "node scripts/backup_db.js",
+    "db:restore": "node scripts/restore_db.js",
     "import:supabase": "node scripts/import_supabase.js",
     "dev:all": "concurrently \"npm run server\" \"npm run dev\"",
     "build": "tsc && vite build",
