@@ -22,7 +22,12 @@ Thumbs.db
 .agents/
 to-do.md
 schema.md
-schema.sql
-supabase_dump.sql
+# Database backups
+*.sql
+!category_migration.sql
+!notifications_migration.sql
+!revision_migration.sql
+backups/
+akibdemo_*.sql
 scripts/
 DEPLOYMENT.md
