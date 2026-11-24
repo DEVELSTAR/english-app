@@ -39,8 +39,50 @@ export interface Lesson {
   category_id?: number | null;
   category?: Category | null;
   content?: string | null;
+  requires_revision?: boolean;
+  revision_count?: number;
+  revision_intervals?: number[];
   created_at: string;
   updated_at: string;
+}
+
+export interface LessonRevisionStatus {
+  lesson_id: number;
+  requires_revision: boolean;
+  current_stage: number;
+  max_stages: number;
+  intervals: number[];
+  is_unlocked: boolean;
+  next_unlock_at?: string | null;
+  is_fully_completed: boolean;
+  completed_at?: string | null;
+  requirements?: {
+    has_note: boolean;
+    has_comment: boolean;
+    can_complete_first_read: boolean;
+  };
+}
+
+export interface CategoryProgress {
+  id: number;
+  name: string;
+  slug: string;
+  icon: string;
+  description: string;
+  total_lessons: number;
+  completed_lessons: number;
+  in_progress_lessons: number;
+  total_possible_reads: number;
+  completed_reads: number;
+  percentage: number;
+  revisions_due_count: number;
+}
+
+export interface ProgressSummary {
+  categories: CategoryProgress[];
+  overall_percentage: number;
+  total_revisions_due: number;
+  total_lessons_mastered: number;
 }
 
 export interface LessonCompletion {

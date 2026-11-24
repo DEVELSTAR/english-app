@@ -37,6 +37,7 @@ router.get('/', async (req, res) => {
     const { category_id, category, lesson_type, status, search } = req.query;
     let sql = `
       SELECT l.id, l.title, l.lesson_date, l.topic, l.status, l.author_id, l.lesson_type, l.category_id,
+             l.requires_revision, l.revision_count, l.revision_intervals,
              l.created_at, l.updated_at,
              c.name as category_name, c.slug as category_slug, c.icon as category_icon, c.description as category_description
       FROM lessons l
@@ -81,6 +82,9 @@ router.get('/', async (req, res) => {
         author_id: l.author_id,
         lesson_type: l.lesson_type,
         category_id: l.category_id,
+        requires_revision: l.requires_revision !== undefined ? Boolean(l.requires_revision) : true,
+        revision_count: l.revision_count || 4,
+        revision_intervals: l.revision_intervals ? (typeof l.revision_intervals === 'string' ? JSON.parse(l.revision_intervals) : l.revision_intervals) : [0, 1, 2, 7],
         created_at: l.created_at,
         updated_at: l.updated_at,
         category: l.category_id
@@ -121,6 +125,9 @@ router.get('/:id', async (req, res) => {
     const lesson = {
       ...row,
       lesson_date: toISTDateString(row.lesson_date),
+      requires_revision: row.requires_revision !== undefined ? Boolean(row.requires_revision) : true,
+      revision_count: row.revision_count || 4,
+      revision_intervals: row.revision_intervals ? (typeof row.revision_intervals === 'string' ? JSON.parse(row.revision_intervals) : row.revision_intervals) : [0, 1, 2, 7],
       category: row.category_id
         ? {
             id: row.category_id,
@@ -173,7 +180,19 @@ router.get('/:id', async (req, res) => {
 // 3. Admin: Create Lesson
 router.post('/', requireAdmin, async (req, res) => {
   try {
-    const { title, lesson_date, topic, status, category_id, lesson_type, content } = req.body;
+    const {
+      title,
+      lesson_date,
+      topic,
+      status,
+      category_id,
+      lesson_type,
+      content,
+      requires_revision,
+      revision_count,
+      revision_intervals,
+    } = req.body;
+
     if (!title?.trim()) {
       return res.status(400).json({ error: 'Title is required.' });
     }
@@ -181,10 +200,15 @@ router.post('/', requireAdmin, async (req, res) => {
     const finalLessonDate = toISTDateString(lesson_date);
     const catId = category_id !== undefined && category_id !== null && category_id !== '' ? parseInt(category_id, 10) : null;
     const lType = lesson_type !== undefined ? parseInt(lesson_type, 10) : 0;
+    const reqRev = requires_revision !== undefined ? (requires_revision ? 1 : 0) : 1;
+    const revCount = revision_count !== undefined ? Math.max(1, parseInt(revision_count, 10)) : 4;
+    const revIntervals = revision_intervals
+      ? (typeof revision_intervals === 'string' ? revision_intervals : JSON.stringify(revision_intervals))
+      : JSON.stringify([0, 1, 2, 7]);
 
     const [result] = await pool.query(
-      `INSERT INTO lessons (title, lesson_date, topic, status, author_id, category_id, lesson_type, content, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
+      `INSERT INTO lessons (title, lesson_date, topic, status, author_id, category_id, lesson_type, content, requires_revision, revision_count, revision_intervals, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
       [
         title.trim(),
         finalLessonDate,
@@ -194,6 +218,9 @@ router.post('/', requireAdmin, async (req, res) => {
         catId,
         lType,
         content || '',
+        reqRev,
+        revCount,
+        revIntervals,
       ]
     );
 
@@ -244,7 +271,18 @@ router.post('/', requireAdmin, async (req, res) => {
 router.put('/:id', requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
-    const { title, lesson_date, topic, status, category_id, lesson_type, content } = req.body;
+    const {
+      title,
+      lesson_date,
+      topic,
+      status,
+      category_id,
+      lesson_type,
+      content,
+      requires_revision,
+      revision_count,
+      revision_intervals,
+    } = req.body;
 
     const [existing] = await pool.query('SELECT id, status FROM lessons WHERE id = ?', [id]);
     if (existing.length === 0) {
@@ -254,10 +292,16 @@ router.put('/:id', requireAdmin, async (req, res) => {
     const catId = category_id !== undefined && category_id !== null && category_id !== '' ? parseInt(category_id, 10) : null;
     const lType = lesson_type !== undefined ? parseInt(lesson_type, 10) : 0;
     const finalLessonDate = toISTDateString(lesson_date);
+    const reqRev = requires_revision !== undefined ? (requires_revision ? 1 : 0) : 1;
+    const revCount = revision_count !== undefined ? Math.max(1, parseInt(revision_count, 10)) : 4;
+    const revIntervals = revision_intervals
+      ? (typeof revision_intervals === 'string' ? revision_intervals : JSON.stringify(revision_intervals))
+      : JSON.stringify([0, 1, 2, 7]);
 
     await pool.query(
       `UPDATE lessons
-       SET title = ?, lesson_date = ?, topic = ?, status = ?, category_id = ?, lesson_type = ?, content = ?, updated_at = NOW()
+       SET title = ?, lesson_date = ?, topic = ?, status = ?, category_id = ?, lesson_type = ?, content = ?,
+           requires_revision = ?, revision_count = ?, revision_intervals = ?, updated_at = NOW()
        WHERE id = ?`,
       [
         title.trim(),
@@ -267,6 +311,9 @@ router.put('/:id', requireAdmin, async (req, res) => {
         catId,
         lType,
         content || '',
+        reqRev,
+        revCount,
+        revIntervals,
         id,
       ]
     );
@@ -397,6 +444,221 @@ router.post('/:id/completion', requireAuth, async (req, res) => {
   } catch (err) {
     console.error('Update completion error:', err);
     res.status(500).json({ error: 'Failed to update progress.' });
+  }
+});
+
+function getOrdinalStage(n) {
+  if (n === 1) return '1st';
+  if (n === 2) return '2nd';
+  if (n === 3) return '3rd';
+  return `${n}th`;
+}
+
+// 7a. Spaced Repetition Revision Status
+router.get('/:id/revision-status', requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+
+    const [lessons] = await pool.query(
+      'SELECT id, title, requires_revision, revision_count, revision_intervals FROM lessons WHERE id = ?',
+      [id]
+    );
+    if (lessons.length === 0) {
+      return res.status(404).json({ error: 'Lesson not found.' });
+    }
+    const lesson = lessons[0];
+    const requiresRevision = lesson.requires_revision !== 0;
+    const maxStages = requiresRevision ? (lesson.revision_count || 4) : 1;
+    const intervals = lesson.revision_intervals
+      ? (typeof lesson.revision_intervals === 'string' ? JSON.parse(lesson.revision_intervals) : lesson.revision_intervals)
+      : [0, 1, 2, 7];
+
+    const [revs] = await pool.query(
+      'SELECT * FROM student_lesson_revisions WHERE user_id = ? AND lesson_id = ?',
+      [userId, id]
+    );
+    const rev = revs[0] || null;
+    const currentStage = rev ? rev.current_stage : 0;
+    const isFullyCompleted = Boolean(rev?.is_fully_completed || (currentStage >= maxStages));
+    const nextUnlockAt = rev?.next_unlock_at || null;
+
+    let isUnlocked = false;
+    if (currentStage === 0) {
+      isUnlocked = true;
+    } else if (currentStage >= maxStages) {
+      isUnlocked = false;
+    } else {
+      isUnlocked = !nextUnlockAt || new Date(nextUnlockAt) <= new Date();
+    }
+
+    // Requirements for 1st Read
+    const [[notesRow]] = await pool.query(
+      'SELECT COUNT(*) as cnt FROM notes WHERE user_id = ? AND lesson_id = ?',
+      [userId, id]
+    );
+    const [[commentsRow]] = await pool.query(
+      'SELECT COUNT(*) as cnt FROM lesson_comments WHERE user_id = ? AND lesson_id = ?',
+      [userId, id]
+    );
+
+    const hasNote = notesRow.cnt > 0;
+    const hasComment = commentsRow.cnt > 0;
+
+    res.json({
+      lesson_id: lesson.id,
+      requires_revision: requiresRevision,
+      current_stage: currentStage,
+      max_stages: maxStages,
+      intervals,
+      is_unlocked: isUnlocked,
+      next_unlock_at: nextUnlockAt,
+      is_fully_completed: isFullyCompleted,
+      completed_at: rev?.completed_at || null,
+      requirements: {
+        has_note: hasNote,
+        has_comment: hasComment,
+        can_complete_first_read: hasNote && hasComment,
+      },
+    });
+  } catch (err) {
+    console.error('Fetch revision status error:', err);
+    res.status(500).json({ error: 'Failed to fetch revision status.' });
+  }
+});
+
+// 7b. Complete Revision Stage
+router.post('/:id/complete-stage', requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+
+    const [lessons] = await pool.query(
+      'SELECT id, title, requires_revision, revision_count, revision_intervals FROM lessons WHERE id = ?',
+      [id]
+    );
+    if (lessons.length === 0) {
+      return res.status(404).json({ error: 'Lesson not found.' });
+    }
+    const lesson = lessons[0];
+    const requiresRevision = lesson.requires_revision !== 0;
+    const maxStages = requiresRevision ? (lesson.revision_count || 4) : 1;
+    const intervals = lesson.revision_intervals
+      ? (typeof lesson.revision_intervals === 'string' ? JSON.parse(lesson.revision_intervals) : lesson.revision_intervals)
+      : [0, 1, 2, 7];
+
+    const [revs] = await pool.query(
+      'SELECT * FROM student_lesson_revisions WHERE user_id = ? AND lesson_id = ?',
+      [userId, id]
+    );
+    const rev = revs[0] || null;
+    const currentStage = rev ? rev.current_stage : 0;
+
+    if (currentStage >= maxStages) {
+      return res.status(400).json({ error: 'All revision reads for this lesson have already been completed.' });
+    }
+
+    // Stage 0 (1st Read) validation: requires at least 1 note and 1 comment
+    if (currentStage === 0) {
+      const [[notesRow]] = await pool.query(
+        'SELECT COUNT(*) as cnt FROM notes WHERE user_id = ? AND lesson_id = ?',
+        [userId, id]
+      );
+      const [[commentsRow]] = await pool.query(
+        'SELECT COUNT(*) as cnt FROM lesson_comments WHERE user_id = ? AND lesson_id = ?',
+        [userId, id]
+      );
+
+      if (notesRow.cnt === 0 || commentsRow.cnt === 0) {
+        return res.status(400).json({
+          error: 'To complete your 1st Read, please write at least 1 study note and join the classroom discussion!',
+          requirements: {
+            has_note: notesRow.cnt > 0,
+            has_comment: commentsRow.cnt > 0,
+          },
+        });
+      }
+    } else {
+      // Subsequent stages: verify unlock time
+      if (rev && rev.next_unlock_at && new Date(rev.next_unlock_at) > new Date()) {
+        return res.status(400).json({
+          error: `This revision read is locked until ${new Date(rev.next_unlock_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })} (IST).`,
+          next_unlock_at: rev.next_unlock_at,
+        });
+      }
+    }
+
+    const newStage = currentStage + 1;
+    const isFullyCompleted = newStage >= maxStages ? 1 : 0;
+    const completedAt = isFullyCompleted ? new Date() : null;
+
+    let nextUnlockAt = null;
+    if (!isFullyCompleted) {
+      const delayDays = (intervals && intervals[newStage] !== undefined) ? Number(intervals[newStage]) : 1;
+      nextUnlockAt = new Date(Date.now() + delayDays * 24 * 60 * 60 * 1000);
+    }
+
+    if (rev) {
+      await pool.query(
+        `UPDATE student_lesson_revisions
+         SET current_stage = ?, max_stages = ?, next_unlock_at = ?, is_fully_completed = ?, completed_at = ?, updated_at = NOW()
+         WHERE id = ?`,
+        [newStage, maxStages, nextUnlockAt, isFullyCompleted, completedAt, rev.id]
+      );
+    } else {
+      await pool.query(
+        `INSERT INTO student_lesson_revisions (user_id, lesson_id, current_stage, max_stages, next_unlock_at, is_fully_completed, completed_at, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
+        [userId, id, newStage, maxStages, nextUnlockAt, isFullyCompleted, completedAt]
+      );
+    }
+
+    // Mirror to lesson_completions
+    const [completions] = await pool.query(
+      'SELECT id FROM lesson_completions WHERE user_id = ? AND lesson_id = ?',
+      [userId, id]
+    );
+    if (completions.length > 0) {
+      await pool.query(
+        `UPDATE lesson_completions
+         SET completed = ?, needs_revision = 0, completed_at = ?, updated_at = NOW()
+         WHERE id = ?`,
+        [isFullyCompleted, completedAt, completions[0].id]
+      );
+    } else {
+      await pool.query(
+        `INSERT INTO lesson_completions (user_id, lesson_id, completed, needs_revision, completed_at, created_at, updated_at)
+         VALUES (?, ?, ?, 0, ?, NOW(), NOW())`,
+        [userId, id, isFullyCompleted, completedAt]
+      );
+    }
+
+    // Audit log (only logs student actions)
+    logAudit({
+      user: req.user,
+      action: 'create',
+      resource_type: 'lesson',
+      resource_id: id,
+      resource_title: lesson.title,
+      details: `Completed ${getOrdinalStage(newStage)} Read for lesson "${lesson.title}"${isFullyCompleted ? ' (100% Mastered!)' : ''}`,
+    });
+
+    res.json({
+      success: true,
+      lesson_id: lesson.id,
+      current_stage: newStage,
+      max_stages: maxStages,
+      is_unlocked: !nextUnlockAt || new Date(nextUnlockAt) <= new Date(),
+      next_unlock_at: nextUnlockAt,
+      is_fully_completed: Boolean(isFullyCompleted),
+      completed_at: completedAt,
+      message: isFullyCompleted
+        ? '🎉 Congratulations! You have 100% mastered this lesson!'
+        : `✅ ${getOrdinalStage(newStage)} Read completed! Next read unlocks in ${intervals[newStage] || 1} day(s).`,
+    });
+  } catch (err) {
+    console.error('Complete stage error:', err);
+    res.status(500).json({ error: 'Failed to complete revision stage.' });
   }
 });
 

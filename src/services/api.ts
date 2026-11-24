@@ -1,3 +1,5 @@
+import { LessonRevisionStatus, ProgressSummary } from '../types/database';
+
 // API client talking to Express /api backend
 const TOKEN_KEY = 'fluentedge_token';
 
@@ -142,7 +144,7 @@ export const api = {
   deleteLesson: (id: number) =>
     request<{ success: boolean }>(`/api/lessons/${id}`, { method: 'DELETE' }),
 
-  // Progress
+  // Progress & Spaced Repetition Revisions
   getLessonCompletion: (lessonId: number) =>
     request<{ completed: boolean; needs_revision: boolean; completed_at?: string }>(
       `/api/lessons/${lessonId}/completion`
@@ -153,6 +155,23 @@ export const api = {
       `/api/lessons/${lessonId}/completion`,
       { method: 'POST', body: JSON.stringify(data) }
     ),
+
+  getLessonRevisionStatus: (lessonId: number) =>
+    request<LessonRevisionStatus>(`/api/lessons/${lessonId}/revision-status`),
+
+  completeLessonStage: (lessonId: number) =>
+    request<{
+      success: boolean;
+      lesson_id: number;
+      current_stage: number;
+      max_stages: number;
+      is_unlocked: boolean;
+      next_unlock_at?: string;
+      is_fully_completed: boolean;
+      message: string;
+    }>(`/api/lessons/${lessonId}/complete-stage`, { method: 'POST' }),
+
+  getCategoryProgress: () => request<ProgressSummary>('/api/progress/categories'),
 
   // Comments
   getComments: (lessonId: number) => request<any[]>(`/api/lessons/${lessonId}/comments`),

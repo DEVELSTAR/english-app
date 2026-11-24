@@ -12,7 +12,9 @@ import notesRoutes from './routes/notes.js';
 import notificationsRoutes from './routes/notifications.js';
 import aiRoutes, { getGeminiApiKey } from './routes/ai.js';
 import historyRoutes from './routes/history.js';
+import progressRoutes from './routes/progress.js';
 import { studentAuditMiddleware } from './utils/auditLogger.js';
+import { ensureRevisionSchema } from './config/migrations.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -60,6 +62,7 @@ app.use('/api/notes', notesRoutes);
 app.use('/api/notifications', notificationsRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/history', historyRoutes);
+app.use('/api/progress', progressRoutes);
 
 // In Production (or cPanel single-port): serve built React frontend files
 const distPath = path.join(__dirname, '../dist');
@@ -92,4 +95,5 @@ app.listen(PORT, async () => {
   console.log(`[FluentEdge Server] Server listening on port ${PORT}`);
   console.log(`[FluentEdge Server] Environment: ${process.env.NODE_ENV || 'development'}`);
   await testConnection();
+  await ensureRevisionSchema();
 });

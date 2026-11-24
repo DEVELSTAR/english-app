@@ -24,6 +24,21 @@ export default function LessonForm({ initialLesson = {}, isEditing = false }: Le
   const [status, setStatus] = useState<LessonStatus>(initialLesson.status ?? 1);
   const [content, setContent] = useState(initialLesson.content || '');
 
+  // Spaced Repetition & Revision Tracking Settings
+  const [requiresRevision, setRequiresRevision] = useState<boolean>(
+    initialLesson.requires_revision !== undefined ? Boolean(initialLesson.requires_revision) : true
+  );
+  const [revisionCount, setRevisionCount] = useState<number>(
+    initialLesson.revision_count ?? 4
+  );
+  const [revisionIntervalsStr, setRevisionIntervalsStr] = useState<string>(
+    initialLesson.revision_intervals
+      ? (Array.isArray(initialLesson.revision_intervals)
+          ? initialLesson.revision_intervals.join(', ')
+          : String(initialLesson.revision_intervals))
+      : '0, 1, 2, 7'
+  );
+
   const [previewMode, setPreviewMode] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -38,12 +53,20 @@ export default function LessonForm({ initialLesson = {}, isEditing = false }: Le
     setIsLoading(true);
     setError(null);
 
+    const parsedIntervals = revisionIntervalsStr
+      .split(',')
+      .map((s) => parseInt(s.trim(), 10))
+      .filter((n) => !isNaN(n));
+
     const payload = {
       title: title.trim(),
       lesson_date: lessonDate,
       category_id: categoryId,
       status,
       content: content.trim(),
+      requires_revision: requiresRevision,
+      revision_count: requiresRevision ? Math.max(1, revisionCount) : 1,
+      revision_intervals: parsedIntervals.length > 0 ? parsedIntervals : [0, 1, 2, 7],
     };
 
     try {
@@ -185,6 +208,66 @@ export default function LessonForm({ initialLesson = {}, isEditing = false }: Le
               <option value={2}>Archived</option>
             </select>
           </div>
+        </div>
+
+        {/* Spaced Repetition & Revision Tracking Settings */}
+        <div className="p-4 rounded-2xl bg-brand-50/50 border border-brand-100 space-y-3.5">
+          <div className="flex items-center justify-between">
+            <div>
+              <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                <span>🔄 Spaced Repetition (Revision Reads)</span>
+              </span>
+              <p className="text-[11px] text-slate-500 mt-0.5">
+                Require students to complete spaced revision reads over time to achieve 100% Mastery.
+              </p>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                checked={requiresRevision}
+                onChange={(e) => setRequiresRevision(e.target.checked)}
+                className="sr-only peer"
+              />
+              <div className="w-10 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-brand-600"></div>
+            </label>
+          </div>
+
+          {requiresRevision && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-brand-100/60">
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                  Total Reads Required
+                </label>
+                <input
+                  type="number"
+                  min={1}
+                  max={10}
+                  value={revisionCount}
+                  onChange={(e) => setRevisionCount(Math.max(1, parseInt(e.target.value, 10) || 1))}
+                  className="w-full px-3 py-1.5 text-xs rounded-xl border border-slate-200 focus:outline-none focus:border-brand-600 bg-white"
+                />
+                <p className="text-[10px] text-slate-400 mt-1">
+                  Default is 4 reads (1st Read, 2nd Read, 3rd Read, 4th Read).
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                  Unlock Intervals in Days (comma-separated)
+                </label>
+                <input
+                  type="text"
+                  value={revisionIntervalsStr}
+                  onChange={(e) => setRevisionIntervalsStr(e.target.value)}
+                  placeholder="0, 1, 2, 7"
+                  className="w-full px-3 py-1.5 text-xs rounded-xl border border-slate-200 focus:outline-none focus:border-brand-600 bg-white font-mono"
+                />
+                <p className="text-[10px] text-slate-400 mt-1">
+                  e.g., 0 (immediate 1st read), 1 (read 2 after 1 day), 2 (read 3 after 2 days), 7 (read 4 after 1 week).
+                </p>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Content Body with HTML Preview */}
