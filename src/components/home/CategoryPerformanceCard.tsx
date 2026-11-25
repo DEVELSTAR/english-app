@@ -54,8 +54,8 @@ export default function CategoryPerformanceCard({ progress, isLoggedIn }: Catego
           </p>
         </div>
 
-        {/* Category Performance Progress Bar */}
-        {isLoggedIn ? (
+        {/* Category Performance Progress Bar (only when category has lessons with stages enabled) */}
+        {isLoggedIn && progress.total_possible_reads > 0 ? (
           <div className="space-y-2 pt-1">
             <div className="flex items-center justify-between text-xs">
               <span className="font-bold text-slate-700 flex items-center gap-1">
@@ -86,15 +86,15 @@ export default function CategoryPerformanceCard({ progress, isLoggedIn }: Catego
                 <span>{progress.completed_reads} / {progress.total_possible_reads} Reads</span>
               </span>
               <span>
-                {progress.completed_lessons}/{progress.total_lessons} Mastered
+                {progress.completed_lessons} Mastered
               </span>
             </div>
           </div>
-        ) : (
+        ) : !isLoggedIn ? (
           <div className="text-[11px] text-slate-400 pt-1">
             Sign in to track reads & revision progress
           </div>
-        )}
+        ) : null}
       </div>
 
       {/* Footer link */}

@@ -59,7 +59,9 @@ router.get('/categories', requireAuth, async (req, res) => {
 
       for (const lesson of catLessons) {
         const requiresRev = lesson.requires_revision !== 0;
-        const maxStages = requiresRev ? (lesson.revision_count || 4) : 1;
+        if (!requiresRev) continue;
+
+        const maxStages = lesson.revision_count || 4;
         totalPossibleReads += maxStages;
 
         const rev = revMap.get(lesson.id);
@@ -163,7 +165,20 @@ router.get('/lessons', requireAuth, async (req, res) => {
 
     for (const lesson of lessons) {
       const requiresRev = lesson.requires_revision !== 0;
-      const maxStages = requiresRev ? (lesson.revision_count || 4) : 1;
+      if (!requiresRev) {
+        progressByLesson[lesson.id] = {
+          lesson_id: lesson.id,
+          requires_revision: false,
+          current_stage: 0,
+          max_stages: 0,
+          is_fully_completed: false,
+          is_unlocked: false,
+          next_unlock_at: null,
+        };
+        continue;
+      }
+
+      const maxStages = lesson.revision_count || 4;
       const rev = revMap.get(lesson.id);
 
       let currentStage = rev ? (rev.current_stage || 0) : 0;
@@ -216,12 +231,13 @@ router.get('/admin/students', requireAdmin, async (req, res) => {
        WHERE status = 1`
     );
 
-    const totalLessons = lessons.length;
+    const totalLessons = lessons.filter((l) => l.requires_revision !== 0).length;
     const lessonMaxMap = new Map();
     let totalPossibleReads = 0;
 
     for (const l of lessons) {
-      const maxStages = l.requires_revision !== 0 ? (l.revision_count || 4) : 1;
+      if (l.requires_revision === 0) continue;
+      const maxStages = l.revision_count || 4;
       lessonMaxMap.set(l.id, maxStages);
       totalPossibleReads += maxStages;
     }
@@ -377,11 +393,18 @@ router.get('/admin/students/:studentId', requireAdmin, async (req, res) => {
     const commentsMap = new Map(commentsRows.map((r) => [r.lesson_id, Number(r.cnt)]));
 
     const lessonDetails = lessons.map((l) => {
-      const maxStages = l.requires_revision !== 0 ? (l.revision_count || 4) : 1;
+      const requiresRev = l.requires_revision !== 0;
+      const maxStages = requiresRev ? (l.revision_count || 4) : 0;
       const rev = revMap.get(l.id);
       const comp = !rev ? compMap.get(l.id) : null;
-      const currentStage = rev ? Math.min(rev.current_stage || 0, maxStages) : comp ? 1 : 0;
-      const isFullyCompleted = Boolean(rev?.is_fully_completed || currentStage >= maxStages);
+      const currentStage = !requiresRev
+        ? 0
+        : rev
+        ? Math.min(rev.current_stage || 0, maxStages)
+        : comp
+        ? 1
+        : 0;
+      const isFullyCompleted = requiresRev && Boolean(rev?.is_fully_completed || currentStage >= maxStages);
 
       return {
         lesson_id: l.id,
@@ -390,7 +413,7 @@ router.get('/admin/students/:studentId', requireAdmin, async (req, res) => {
         category_id: l.category_id,
         category_name: l.category_name || 'Uncategorized',
         category_icon: l.category_icon || '📚',
-        requires_revision: l.requires_revision !== 0,
+        requires_revision: requiresRev,
         current_stage: currentStage,
         max_stages: maxStages,
         is_fully_completed: isFullyCompleted,
@@ -403,7 +426,7 @@ router.get('/admin/students/:studentId', requireAdmin, async (req, res) => {
     });
 
     const categoryDetails = categories.map((cat) => {
-      const catLessons = lessonDetails.filter((l) => l.category_id === cat.id);
+      const catLessons = lessonDetails.filter((l) => l.category_id === cat.id && l.requires_revision);
       const totalPossibleReads = catLessons.reduce((sum, l) => sum + l.max_stages, 0);
       const completedReads = catLessons.reduce((sum, l) => sum + l.current_stage, 0);
       const completedLessons = catLessons.filter((l) => l.is_fully_completed).length;

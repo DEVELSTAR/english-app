@@ -163,66 +163,52 @@ export default function StudentActions({ lessonId, lessonContent, lessonTitle }:
           )}
         </button>
 
-        {/* Dynamic Spaced Repetition Read Button (or simple Mark Complete if no stages) */}
-        {isFullyCompleted || currentStage >= maxStages ? (
-          <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold bg-emerald-600 text-white shadow-sm shadow-emerald-600/20">
-            <CheckCircle2 className="w-4 h-4 text-emerald-100" />
-            <span>{requiresRevision ? '✅ 100% Mastered' : 'Completed'}</span>
-            {requiresRevision && (
+        {/* Dynamic Spaced Repetition Read Button (only shown when stages are enabled) */}
+        {requiresRevision && (
+          isFullyCompleted || currentStage >= maxStages ? (
+            <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold bg-emerald-600 text-white shadow-sm shadow-emerald-600/20">
+              <CheckCircle2 className="w-4 h-4 text-emerald-100" />
+              <span>✅ 100% Mastered</span>
               <span className="text-[10px] bg-emerald-700/60 px-1.5 py-0.5 rounded-md font-mono ml-1">
                 {maxStages}/{maxStages} Reads
               </span>
-            )}
-          </div>
-        ) : !requiresRevision ? (
-          <button
-            type="button"
-            onClick={handleCompleteStage}
-            disabled={isSubmitting}
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer shadow-sm bg-brand-600 hover:bg-brand-700 text-white shadow-brand-600/20"
-          >
-            {isSubmitting ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-            ) : (
-              <CheckCircle2 className="w-3.5 h-3.5" />
-            )}
-            <span>Mark Complete</span>
-          </button>
-        ) : !isUnlocked && nextUnlockAt ? (
-          <button
-            type="button"
-            disabled
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold bg-slate-100 text-slate-500 border border-slate-200 cursor-not-allowed shadow-2xs"
-            title={`Locked until ${new Date(nextUnlockAt).toLocaleString('en-IN')}`}
-          >
-            <Lock className="w-3.5 h-3.5 text-slate-400" />
-            <span>
-              🔒 {nextStageOrdinal} Read (Unlocks in {formatRemainingTime(nextUnlockAt)})
-            </span>
-          </button>
-        ) : (
-          <button
-            type="button"
-            onClick={handleCompleteStage}
-            disabled={isSubmitting}
-            className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer shadow-sm ${
-              currentStage === 0
-                ? 'bg-brand-600 hover:bg-brand-700 text-white shadow-brand-600/20'
-                : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/20 animate-pulse'
-            }`}
-          >
-            {isSubmitting ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-            ) : (
-              <BookOpen className="w-3.5 h-3.5" />
-            )}
-            <span>
-              {currentStage === 0 ? 'Complete 1st Read' : `Complete ${nextStageOrdinal} Read`}
-            </span>
-            <span className="text-[10px] bg-black/20 px-1.5 py-0.5 rounded-md font-mono">
-              Stage {currentStage}/{maxStages}
-            </span>
-          </button>
+            </div>
+          ) : !isUnlocked && nextUnlockAt ? (
+            <button
+              type="button"
+              disabled
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold bg-slate-100 text-slate-500 border border-slate-200 cursor-not-allowed shadow-2xs"
+              title={`Locked until ${new Date(nextUnlockAt).toLocaleString('en-IN')}`}
+            >
+              <Lock className="w-3.5 h-3.5 text-slate-400" />
+              <span>
+                🔒 {nextStageOrdinal} Read (Unlocks in {formatRemainingTime(nextUnlockAt)})
+              </span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={handleCompleteStage}
+              disabled={isSubmitting}
+              className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer shadow-sm ${
+                currentStage === 0
+                  ? 'bg-brand-600 hover:bg-brand-700 text-white shadow-brand-600/20'
+                  : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/20 animate-pulse'
+              }`}
+            >
+              {isSubmitting ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <BookOpen className="w-3.5 h-3.5" />
+              )}
+              <span>
+                {currentStage === 0 ? 'Complete 1st Read' : `Complete ${nextStageOrdinal} Read`}
+              </span>
+              <span className="text-[10px] bg-black/20 px-1.5 py-0.5 rounded-md font-mono">
+                Stage {currentStage}/{maxStages}
+              </span>
+            </button>
+          )
         )}
 
         {/* Read Stage Progress Dots */}

@@ -170,10 +170,10 @@ export default function LessonsPage() {
                     <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition" />
                   </span>
 
-                  {isCompleted ? (
+                  {requiresRevision && isCompleted ? (
                     <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold font-mono bg-emerald-50 text-emerald-700 border border-emerald-200">
                       <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                      {requiresRevision && <span>{maxStages}/{maxStages}</span>}
+                      <span>{maxStages}/{maxStages}</span>
                     </span>
                   ) : requiresRevision ? (
                     <span

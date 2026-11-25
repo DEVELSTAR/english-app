@@ -272,20 +272,28 @@ export default function AdminStudentProgressPage() {
                           <span>{cat.icon}</span>
                           <span className="truncate">{cat.name}</span>
                         </span>
-                        <span className="text-xs font-black font-mono text-brand-600">{cat.percentage}%</span>
+                        {cat.total_possible_reads > 0 && (
+                          <span className="text-xs font-black font-mono text-brand-600">{cat.percentage}%</span>
+                        )}
                       </div>
-                      <div className="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden">
-                        <div
-                          className={`h-full rounded-full ${
-                            cat.percentage === 100 ? 'bg-emerald-500' : 'bg-brand-600'
-                          }`}
-                          style={{ width: `${cat.percentage}%` }}
-                        />
-                      </div>
-                      <div className="flex items-center justify-between text-[10px] text-slate-500 font-medium">
-                        <span>{cat.completed_reads}/{cat.total_possible_reads} Reads</span>
-                        <span>{cat.completed_lessons}/{cat.total_lessons} Mastered</span>
-                      </div>
+                      {cat.total_possible_reads > 0 ? (
+                        <>
+                          <div className="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                            <div
+                              className={`h-full rounded-full ${
+                                cat.percentage === 100 ? 'bg-emerald-500' : 'bg-brand-600'
+                              }`}
+                              style={{ width: `${cat.percentage}%` }}
+                            />
+                          </div>
+                          <div className="flex items-center justify-between text-[10px] text-slate-500 font-medium">
+                            <span>{cat.completed_reads}/{cat.total_possible_reads} Reads</span>
+                            <span>{cat.completed_lessons}/{cat.total_lessons} Mastered</span>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="text-[10px] text-slate-400">No revision stages enabled</div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -351,13 +359,13 @@ export default function AdminStudentProgressPage() {
                               </div>
                             </td>
                             <td className="py-2.5 px-4">
-                              {l.is_fully_completed ? (
+                              {l.requires_revision === false ? (
+                                <span className="text-[11px] text-slate-400">No Stages</span>
+                              ) : l.is_fully_completed ? (
                                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold font-mono bg-emerald-50 text-emerald-700 border border-emerald-200">
                                   <CheckCircle2 className="w-3 h-3" />
-                                  {l.requires_revision !== false && <span>{l.max_stages}/{l.max_stages}</span>}
+                                  <span>{l.max_stages}/{l.max_stages}</span>
                                 </span>
-                              ) : l.requires_revision === false ? (
-                                <span className="text-[11px] text-slate-400">—</span>
                               ) : l.current_stage > 0 ? (
                                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold font-mono bg-amber-50 text-amber-700 border border-amber-200">
                                   <Clock className="w-3 h-3" />
