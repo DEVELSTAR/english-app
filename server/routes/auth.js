@@ -247,7 +247,7 @@ router.put('/profile', requireAuth, async (req, res) => {
 router.get('/classmates', requireAuth, async (req, res) => {
   try {
     const [students] = await pool.query(
-      'SELECT id, name, email_address, profile_icon FROM users WHERE role = 0 AND id != ? ORDER BY name ASC',
+      'SELECT id, name, email_address, profile_icon FROM users WHERE (role IS NULL OR role NOT IN (1, 2)) AND id != ? ORDER BY name ASC',
       [req.user.id]
     );
     res.json(students);
@@ -260,7 +260,7 @@ router.get('/classmates', requireAuth, async (req, res) => {
 router.get('/students', requireAdmin, async (req, res) => {
   try {
     const [students] = await pool.query(
-      'SELECT id, name, email_address, role, profile_icon, plain_password, created_at FROM users WHERE role = 0 ORDER BY created_at DESC'
+      'SELECT id, name, email_address, role, profile_icon, plain_password, created_at FROM users WHERE (role IS NULL OR role NOT IN (1, 2)) ORDER BY created_at DESC'
     );
     res.json(students);
   } catch (err) {
@@ -337,7 +337,7 @@ router.put('/students/:id', requireAdmin, async (req, res) => {
 
     if (updates.length > 0) {
       values.push(id);
-      await pool.query(`UPDATE users SET ${updates.join(', ')}, updated_at = NOW() WHERE id = ? AND role = 0`, values);
+      await pool.query(`UPDATE users SET ${updates.join(', ')}, updated_at = NOW() WHERE id = ? AND (role IS NULL OR role NOT IN (1, 2))`, values);
     }
 
     const [student] = await pool.query(
@@ -354,7 +354,7 @@ router.put('/students/:id', requireAdmin, async (req, res) => {
 router.delete('/students/:id', requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
-    await pool.query('DELETE FROM users WHERE id = ? AND role = 0', [id]);
+    await pool.query('DELETE FROM users WHERE id = ? AND (role IS NULL OR role NOT IN (1, 2))', [id]);
     res.json({ success: true, message: 'Student removed successfully.' });
   } catch (err) {
     res.status(500).json({ error: 'Failed to delete student.' });

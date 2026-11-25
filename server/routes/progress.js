@@ -180,7 +180,7 @@ router.get('/admin/students', requireAdmin, async (req, res) => {
     const [students] = await pool.query(
       `SELECT id, name, email_address, profile_icon, created_at
        FROM users
-       WHERE role = 0
+       WHERE (role IS NULL OR role NOT IN (1, 2))
        ORDER BY name ASC`
     );
 
@@ -278,7 +278,7 @@ router.get('/admin/students/:studentId', requireAdmin, async (req, res) => {
     const [users] = await pool.query(
       `SELECT id, name, email_address, profile_icon, created_at
        FROM users
-       WHERE id = ? AND role = 0`,
+       WHERE id = ? AND (role IS NULL OR role NOT IN (1, 2))`,
       [studentId]
     );
     if (users.length === 0) {
