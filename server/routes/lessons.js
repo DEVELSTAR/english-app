@@ -583,8 +583,8 @@ router.post('/:id/complete-stage', requireAuth, async (req, res) => {
       return res.status(400).json({ error: 'All revision reads for this lesson have already been completed.' });
     }
 
-    // Stage 0 (1st Read) validation: requires at least 1 note and 1 comment
-    if (currentStage === 0) {
+    // Stage 0 (1st Read) validation: only enforce note + comment when spaced repetition is enabled
+    if (currentStage === 0 && requiresRevision) {
       const [[notesRow]] = await pool.query(
         'SELECT COUNT(*) as cnt FROM notes WHERE user_id = ? AND lesson_id = ?',
         [userId, id]

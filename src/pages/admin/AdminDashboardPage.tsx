@@ -15,6 +15,8 @@ import {
   Trash2,
   Loader2,
   Calendar,
+  Eye,
+  X,
 } from 'lucide-react';
 
 export default function AdminDashboardPage() {
@@ -23,6 +25,22 @@ export default function AdminDashboardPage() {
   const [studentsCount, setStudentsCount] = useState(0);
   const [search, setSearch] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+
+  // Preview Modal State
+  const [previewLesson, setPreviewLesson] = useState<Lesson | null>(null);
+  const [isPreviewLoading, setIsPreviewLoading] = useState(false);
+
+  const handleOpenPreview = async (lessonId: number) => {
+    setIsPreviewLoading(true);
+    try {
+      const res = await api.getLessonDetail(lessonId);
+      setPreviewLesson(res.lesson);
+    } catch (err: any) {
+      alert(err.message || 'Failed to load lesson preview.');
+    } finally {
+      setIsPreviewLoading(false);
+    }
+  };
 
   const loadData = async () => {
     setIsLoading(true);
@@ -182,8 +200,8 @@ export default function AdminDashboardPage() {
                           {lesson.revision_count || 4} Stages
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 text-slate-600 font-mono">
-                          1 Stage
+                        <span className="text-[11px] text-slate-400 font-medium">
+                          No Stages
                         </span>
                       )}
                     </td>
@@ -199,6 +217,14 @@ export default function AdminDashboardPage() {
                       </span>
                     </td>
                     <td className="py-3.5 px-5 text-right space-x-1">
+                      <button
+                        type="button"
+                        onClick={() => handleOpenPreview(lesson.id)}
+                        className="inline-flex p-1.5 text-slate-400 hover:text-indigo-600 rounded-lg hover:bg-slate-100 cursor-pointer"
+                        title="View Lesson"
+                      >
+                        <Eye className="w-3.5 h-3.5" />
+                      </button>
                       <Link
                         to={`/admin/lessons/${lesson.id}/edit`}
                         className="inline-flex p-1.5 text-slate-400 hover:text-brand-600 rounded-lg hover:bg-slate-100"
@@ -222,6 +248,84 @@ export default function AdminDashboardPage() {
           </div>
         )}
       </div>
+
+      {/* Preview Loading Overlay */}
+      {isPreviewLoading && (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 flex items-center justify-center">
+          <div className="bg-white px-6 py-4 rounded-2xl shadow-xl flex items-center gap-3 text-xs font-bold text-slate-700">
+            <Loader2 className="w-4 h-4 animate-spin text-brand-600" />
+            <span>Loading lesson...</span>
+          </div>
+        </div>
+      )}
+
+      {/* Lesson Preview Modal */}
+      {previewLesson && (
+        <div
+          className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 flex items-center justify-center p-4"
+          onClick={() => setPreviewLesson(null)}
+        >
+          <div
+            className="bg-white rounded-3xl max-w-3xl w-full max-h-[88vh] flex flex-col shadow-2xl overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-6 border-b border-slate-100 flex items-start justify-between gap-4 bg-slate-50/50">
+              <div className="space-y-1.5">
+                <div className="flex flex-wrap items-center gap-2">
+                  {previewLesson.category && (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-100">
+                      <span>{previewLesson.category.icon || '📚'}</span>
+                      <span>{previewLesson.category.name}</span>
+                    </span>
+                  )}
+                  <span className="text-[11px] text-slate-400 font-mono flex items-center gap-1">
+                    <Calendar className="w-3 h-3" />
+                    <span>{formatLessonDisplayDate(previewLesson)}</span>
+                  </span>
+                  <span
+                    className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                      previewLesson.status === 1
+                        ? 'bg-emerald-50 text-emerald-700'
+                        : 'bg-slate-100 text-slate-600'
+                    }`}
+                  >
+                    {previewLesson.status === 1 ? 'Published' : 'Draft'}
+                  </span>
+                </div>
+                <h2 className="text-lg sm:text-xl font-black text-slate-900">
+                  {previewLesson.title}
+                </h2>
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0">
+                <Link
+                  to={`/admin/lessons/${previewLesson.id}/edit`}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold transition"
+                >
+                  <Edit2 className="w-3.5 h-3.5" />
+                  <span>Edit</span>
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => setPreviewLesson(null)}
+                  className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6 sm:p-8 overflow-y-auto">
+              <div
+                className="prose prose-slate max-w-none text-sm leading-relaxed"
+                dangerouslySetInnerHTML={{
+                  __html: previewLesson.content || '<p class="text-slate-400">No content.</p>',
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

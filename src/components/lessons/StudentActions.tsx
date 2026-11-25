@@ -92,8 +92,8 @@ export default function StudentActions({ lessonId, lessonContent, lessonTitle }:
       return;
     }
 
-    // Check 1st Read requirements
-    if (revisionStatus.current_stage === 0) {
+    // Check 1st Read requirements (only when spaced repetition is enabled)
+    if (revisionStatus.requires_revision && revisionStatus.current_stage === 0) {
       if (!revisionStatus.requirements?.can_complete_first_read) {
         setShowRequirementAlert(true);
         return;
@@ -128,6 +128,7 @@ export default function StudentActions({ lessonId, lessonContent, lessonTitle }:
     );
   }
 
+  const requiresRevision = revisionStatus?.requires_revision ?? true;
   const currentStage = revisionStatus?.current_stage ?? 0;
   const maxStages = revisionStatus?.max_stages ?? 4;
   const isFullyCompleted = revisionStatus?.is_fully_completed ?? false;
@@ -162,15 +163,31 @@ export default function StudentActions({ lessonId, lessonContent, lessonTitle }:
           )}
         </button>
 
-        {/* Dynamic Spaced Repetition Read Button */}
+        {/* Dynamic Spaced Repetition Read Button (or simple Mark Complete if no stages) */}
         {isFullyCompleted || currentStage >= maxStages ? (
           <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold bg-emerald-600 text-white shadow-sm shadow-emerald-600/20">
             <CheckCircle2 className="w-4 h-4 text-emerald-100" />
-            <span>✅ 100% Mastered</span>
-            <span className="text-[10px] bg-emerald-700/60 px-1.5 py-0.5 rounded-md font-mono ml-1">
-              {maxStages}/{maxStages} Reads
-            </span>
+            <span>{requiresRevision ? '✅ 100% Mastered' : 'Completed'}</span>
+            {requiresRevision && (
+              <span className="text-[10px] bg-emerald-700/60 px-1.5 py-0.5 rounded-md font-mono ml-1">
+                {maxStages}/{maxStages} Reads
+              </span>
+            )}
           </div>
+        ) : !requiresRevision ? (
+          <button
+            type="button"
+            onClick={handleCompleteStage}
+            disabled={isSubmitting}
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer shadow-sm bg-brand-600 hover:bg-brand-700 text-white shadow-brand-600/20"
+          >
+            {isSubmitting ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <CheckCircle2 className="w-3.5 h-3.5" />
+            )}
+            <span>Mark Complete</span>
+          </button>
         ) : !isUnlocked && nextUnlockAt ? (
           <button
             type="button"

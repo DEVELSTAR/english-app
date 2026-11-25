@@ -184,6 +184,7 @@ router.get('/lessons', requireAuth, async (req, res) => {
 
       progressByLesson[lesson.id] = {
         lesson_id: lesson.id,
+        requires_revision: requiresRev,
         current_stage: Math.min(currentStage, maxStages),
         max_stages: maxStages,
         is_fully_completed: isFullyCompleted,
@@ -389,6 +390,7 @@ router.get('/admin/students/:studentId', requireAdmin, async (req, res) => {
         category_id: l.category_id,
         category_name: l.category_name || 'Uncategorized',
         category_icon: l.category_icon || '📚',
+        requires_revision: l.requires_revision !== 0,
         current_stage: currentStage,
         max_stages: maxStages,
         is_fully_completed: isFullyCompleted,

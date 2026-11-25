@@ -87,6 +87,7 @@ export interface ProgressSummary {
 
 export interface LessonCardProgress {
   lesson_id: number;
+  requires_revision?: boolean;
   current_stage: number;
   max_stages: number;
   is_fully_completed: boolean;
@@ -136,6 +137,7 @@ export interface AdminStudentProgressDetail {
     category_id?: number | null;
     category_name: string;
     category_icon: string;
+    requires_revision?: boolean;
     current_stage: number;
     max_stages: number;
     is_fully_completed: boolean;

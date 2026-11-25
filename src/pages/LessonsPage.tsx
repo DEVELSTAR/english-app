@@ -128,7 +128,8 @@ export default function LessonsPage() {
             const catName = lesson.category?.name || 'Lesson';
             const catIcon = lesson.category?.icon || '📚';
             const prog = progressMap[lesson.id];
-            const maxStages = prog?.max_stages ?? (lesson.requires_revision !== false ? (lesson.revision_count || 4) : 1);
+            const requiresRevision = prog?.requires_revision ?? (lesson.requires_revision !== false);
+            const maxStages = prog?.max_stages ?? (requiresRevision ? (lesson.revision_count || 4) : 1);
             const currentStage = prog?.current_stage ?? 0;
             const isCompleted = prog?.is_fully_completed ?? false;
 
@@ -172,9 +173,9 @@ export default function LessonsPage() {
                   {isCompleted ? (
                     <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold font-mono bg-emerald-50 text-emerald-700 border border-emerald-200">
                       <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                      <span>{maxStages}/{maxStages}</span>
+                      {requiresRevision && <span>{maxStages}/{maxStages}</span>}
                     </span>
-                  ) : (
+                  ) : requiresRevision ? (
                     <span
                       className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold font-mono border ${
                         currentStage > 0
@@ -196,7 +197,7 @@ export default function LessonsPage() {
                         {currentStage}/{maxStages}
                       </span>
                     </span>
-                  )}
+                  ) : null}
                 </div>
               </Link>
             );
