@@ -85,6 +85,68 @@ export interface ProgressSummary {
   total_lessons_mastered: number;
 }
 
+export interface LessonCardProgress {
+  lesson_id: number;
+  current_stage: number;
+  max_stages: number;
+  is_fully_completed: boolean;
+  is_unlocked: boolean;
+  next_unlock_at?: string | null;
+}
+
+export interface AdminStudentProgressSummary {
+  id: number;
+  name: string;
+  email_address: string;
+  profile_icon: string;
+  created_at: string;
+  overall_percentage: number;
+  completed_lessons: number;
+  in_progress_lessons: number;
+  total_lessons: number;
+  completed_reads: number;
+  total_possible_reads: number;
+  notes_count: number;
+  comments_count: number;
+  last_activity_at?: string | null;
+}
+
+export interface AdminStudentProgressDetail {
+  student: {
+    id: number;
+    name: string;
+    email_address: string;
+    profile_icon: string;
+    created_at: string;
+  };
+  categories: {
+    id: number;
+    name: string;
+    icon: string;
+    total_lessons: number;
+    completed_lessons: number;
+    completed_reads: number;
+    total_possible_reads: number;
+    percentage: number;
+  }[];
+  lessons: {
+    lesson_id: number;
+    title: string;
+    lesson_date: string;
+    category_id?: number | null;
+    category_name: string;
+    category_icon: string;
+    current_stage: number;
+    max_stages: number;
+    is_fully_completed: boolean;
+    next_unlock_at?: string | null;
+    completed_at?: string | null;
+    updated_at?: string | null;
+    notes_count: number;
+    comments_count: number;
+  }[];
+}
+
 export interface LessonCompletion {
   id: number;
   user_id: number;

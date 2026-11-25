@@ -23,6 +23,7 @@ import AdminCategoriesPage from './pages/admin/AdminCategoriesPage';
 import NewLessonPage from './pages/admin/NewLessonPage';
 import EditLessonPage from './pages/admin/EditLessonPage';
 import AdminStudentsPage from './pages/admin/AdminStudentsPage';
+import AdminStudentProgressPage from './pages/admin/AdminStudentProgressPage';
 import AdminAdminsPage from './pages/admin/AdminAdminsPage';
 import AdminHistoryPage from './pages/admin/AdminHistoryPage';
 
@@ -141,6 +142,7 @@ export default function App() {
             <Route path="lessons/new" element={<NewLessonPage />} />
             <Route path="lessons/:id/edit" element={<EditLessonPage />} />
             <Route path="students" element={<AdminStudentsPage />} />
+            <Route path="progress" element={<AdminStudentProgressPage />} />
             <Route path="admins" element={<AdminAdminsPage />} />
             <Route path="history" element={<AdminHistoryPage />} />
           </Route>

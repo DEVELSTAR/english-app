@@ -10,6 +10,7 @@ import {
   FolderTree,
   LogOut,
   Loader2,
+  TrendingUp,
 } from 'lucide-react';
 
 export default function AdminLayout() {
@@ -46,6 +47,7 @@ export default function AdminLayout() {
     { name: 'New Lesson', path: '/admin/lessons/new', icon: BookPlus },
     { name: 'Categories', path: '/admin/categories', icon: FolderTree },
     { name: 'Students', path: '/admin/students', icon: Users },
+    { name: 'Student Progress', path: '/admin/progress', icon: TrendingUp },
     ...(isSuperAdmin ? [{ name: 'Admin Staff', path: '/admin/admins', icon: ShieldCheck }] : []),
     { name: 'Audit Logs', path: '/admin/history', icon: History },
   ];

@@ -1,4 +1,10 @@
-import { LessonRevisionStatus, ProgressSummary } from '../types/database';
+import {
+  LessonRevisionStatus,
+  ProgressSummary,
+  LessonCardProgress,
+  AdminStudentProgressSummary,
+  AdminStudentProgressDetail,
+} from '../types/database';
 
 // API client talking to Express /api backend
 const TOKEN_KEY = 'fluentedge_token';
@@ -172,6 +178,13 @@ export const api = {
     }>(`/api/lessons/${lessonId}/complete-stage`, { method: 'POST' }),
 
   getCategoryProgress: () => request<ProgressSummary>('/api/progress/categories'),
+
+  getLessonsProgress: () => request<Record<number, LessonCardProgress>>('/api/progress/lessons'),
+
+  getAdminStudentsProgress: () => request<AdminStudentProgressSummary[]>('/api/progress/admin/students'),
+
+  getAdminStudentProgressDetail: (studentId: number) =>
+    request<AdminStudentProgressDetail>(`/api/progress/admin/students/${studentId}`),
 
   // Comments
   getComments: (lessonId: number) => request<any[]>(`/api/lessons/${lessonId}/comments`),

@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import pool from '../config/db.js';
-import { requireAuth } from '../middleware/auth.js';
+import { requireAuth, requireAdmin } from '../middleware/auth.js';
 import { checkAndNotifyDueRevisions } from '../utils/revisionNotifications.js';
 
 const router = Router();
@@ -112,6 +112,266 @@ router.get('/categories', requireAuth, async (req, res) => {
   } catch (err) {
     console.error('Fetch category progress error:', err);
     res.status(500).json({ error: 'Failed to fetch category progress.' });
+  }
+});
+
+// 2. Get Per-Lesson Revision Stage Progress for Current Student
+router.get('/lessons', requireAuth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const [lessons] = await pool.query(
+      `SELECT id, requires_revision, revision_count
+       FROM lessons
+       WHERE status = 1`
+    );
+
+    const [revisions] = await pool.query(
+      `SELECT lesson_id, current_stage, max_stages, next_unlock_at, is_fully_completed
+       FROM student_lesson_revisions
+       WHERE user_id = ?`,
+      [userId]
+    );
+
+    const revMap = new Map();
+    for (const r of revisions) {
+      revMap.set(r.lesson_id, r);
+    }
+
+    const now = new Date();
+    const progressByLesson = {};
+
+    for (const lesson of lessons) {
+      const requiresRev = lesson.requires_revision !== 0;
+      const maxStages = requiresRev ? (lesson.revision_count || 4) : 1;
+      const rev = revMap.get(lesson.id);
+
+      const currentStage = rev ? (rev.current_stage || 0) : 0;
+      const isFullyCompleted = Boolean(rev?.is_fully_completed || currentStage >= maxStages);
+      const nextUnlockAt = rev?.next_unlock_at || null;
+
+      let isUnlocked = false;
+      if (currentStage === 0) {
+        isUnlocked = true;
+      } else if (currentStage < maxStages) {
+        isUnlocked = !nextUnlockAt || new Date(nextUnlockAt) <= now;
+      }
+
+      progressByLesson[lesson.id] = {
+        lesson_id: lesson.id,
+        current_stage: Math.min(currentStage, maxStages),
+        max_stages: maxStages,
+        is_fully_completed: isFullyCompleted,
+        is_unlocked: isUnlocked,
+        next_unlock_at: nextUnlockAt,
+      };
+    }
+
+    res.json(progressByLesson);
+  } catch (err) {
+    console.error('Fetch lesson progress map error:', err);
+    res.status(500).json({ error: 'Failed to fetch lesson progress.' });
+  }
+});
+
+// 3. Admin: Get Overall Progress Summary for All Students
+router.get('/admin/students', requireAdmin, async (req, res) => {
+  try {
+    const [students] = await pool.query(
+      `SELECT id, name, email_address, profile_icon, created_at
+       FROM users
+       WHERE role = 0
+       ORDER BY name ASC`
+    );
+
+    const [lessons] = await pool.query(
+      `SELECT id, requires_revision, revision_count
+       FROM lessons
+       WHERE status = 1`
+    );
+
+    const totalLessons = lessons.length;
+    const lessonMaxMap = new Map();
+    let totalPossibleReads = 0;
+
+    for (const l of lessons) {
+      const maxStages = l.requires_revision !== 0 ? (l.revision_count || 4) : 1;
+      lessonMaxMap.set(l.id, maxStages);
+      totalPossibleReads += maxStages;
+    }
+
+    const [revisions] = await pool.query(
+      `SELECT user_id, lesson_id, current_stage, is_fully_completed, updated_at
+       FROM student_lesson_revisions`
+    );
+
+    const [notesCounts] = await pool.query(
+      `SELECT user_id, COUNT(*) as cnt FROM notes GROUP BY user_id`
+    );
+    const notesMap = new Map(notesCounts.map((r) => [r.user_id, Number(r.cnt)]));
+
+    const [commentsCounts] = await pool.query(
+      `SELECT user_id, COUNT(*) as cnt FROM lesson_comments GROUP BY user_id`
+    );
+    const commentsMap = new Map(commentsCounts.map((r) => [r.user_id, Number(r.cnt)]));
+
+    const result = students.map((student) => {
+      const studentRevs = revisions.filter(
+        (r) => r.user_id === student.id && lessonMaxMap.has(r.lesson_id)
+      );
+
+      let completedReads = 0;
+      let completedLessons = 0;
+      let inProgressLessons = 0;
+      let lastActivityAt = null;
+
+      for (const rev of studentRevs) {
+        const maxStages = lessonMaxMap.get(rev.lesson_id) || 4;
+        const stage = Math.min(rev.current_stage || 0, maxStages);
+        completedReads += stage;
+
+        if (rev.is_fully_completed || stage >= maxStages) {
+          completedLessons++;
+        } else if (stage > 0) {
+          inProgressLessons++;
+        }
+
+        if (rev.updated_at && (!lastActivityAt || new Date(rev.updated_at) > new Date(lastActivityAt))) {
+          lastActivityAt = rev.updated_at;
+        }
+      }
+
+      const overallPercentage = totalPossibleReads > 0
+        ? Math.min(100, Math.round((completedReads / totalPossibleReads) * 100))
+        : 0;
+
+      return {
+        id: student.id,
+        name: student.name,
+        email_address: student.email_address,
+        profile_icon: student.profile_icon || 'user',
+        created_at: student.created_at,
+        overall_percentage: overallPercentage,
+        completed_lessons: completedLessons,
+        in_progress_lessons: inProgressLessons,
+        total_lessons: totalLessons,
+        completed_reads: completedReads,
+        total_possible_reads: totalPossibleReads,
+        notes_count: notesMap.get(student.id) || 0,
+        comments_count: commentsMap.get(student.id) || 0,
+        last_activity_at: lastActivityAt,
+      };
+    });
+
+    res.json(result);
+  } catch (err) {
+    console.error('Admin fetch students progress error:', err);
+    res.status(500).json({ error: 'Failed to fetch students progress.' });
+  }
+});
+
+// 4. Admin: Get Detailed Progress for a Single Student
+router.get('/admin/students/:studentId', requireAdmin, async (req, res) => {
+  try {
+    const { studentId } = req.params;
+
+    const [users] = await pool.query(
+      `SELECT id, name, email_address, profile_icon, created_at
+       FROM users
+       WHERE id = ? AND role = 0`,
+      [studentId]
+    );
+    if (users.length === 0) {
+      return res.status(404).json({ error: 'Student not found.' });
+    }
+    const student = users[0];
+
+    const [categories] = await pool.query(
+      `SELECT id, name, slug, icon FROM categories ORDER BY id ASC`
+    );
+
+    const [lessons] = await pool.query(
+      `SELECT l.id, l.title, l.lesson_date, l.category_id, l.requires_revision, l.revision_count,
+              c.name as category_name, c.icon as category_icon
+       FROM lessons l
+       LEFT JOIN categories c ON l.category_id = c.id
+       WHERE l.status = 1
+       ORDER BY l.lesson_date DESC, l.id DESC`
+    );
+
+    const [revisions] = await pool.query(
+      `SELECT lesson_id, current_stage, max_stages, next_unlock_at, is_fully_completed, completed_at, updated_at
+       FROM student_lesson_revisions
+       WHERE user_id = ?`,
+      [studentId]
+    );
+    const revMap = new Map(revisions.map((r) => [r.lesson_id, r]));
+
+    const [notesRows] = await pool.query(
+      `SELECT lesson_id, COUNT(*) as cnt FROM notes WHERE user_id = ? AND lesson_id IS NOT NULL GROUP BY lesson_id`,
+      [studentId]
+    );
+    const notesMap = new Map(notesRows.map((r) => [r.lesson_id, Number(r.cnt)]));
+
+    const [commentsRows] = await pool.query(
+      `SELECT lesson_id, COUNT(*) as cnt FROM lesson_comments WHERE user_id = ? GROUP BY lesson_id`,
+      [studentId]
+    );
+    const commentsMap = new Map(commentsRows.map((r) => [r.lesson_id, Number(r.cnt)]));
+
+    const lessonDetails = lessons.map((l) => {
+      const maxStages = l.requires_revision !== 0 ? (l.revision_count || 4) : 1;
+      const rev = revMap.get(l.id);
+      const currentStage = rev ? Math.min(rev.current_stage || 0, maxStages) : 0;
+      const isFullyCompleted = Boolean(rev?.is_fully_completed || currentStage >= maxStages);
+
+      return {
+        lesson_id: l.id,
+        title: l.title,
+        lesson_date: l.lesson_date,
+        category_id: l.category_id,
+        category_name: l.category_name || 'Uncategorized',
+        category_icon: l.category_icon || '📚',
+        current_stage: currentStage,
+        max_stages: maxStages,
+        is_fully_completed: isFullyCompleted,
+        next_unlock_at: rev?.next_unlock_at || null,
+        completed_at: rev?.completed_at || null,
+        updated_at: rev?.updated_at || null,
+        notes_count: notesMap.get(l.id) || 0,
+        comments_count: commentsMap.get(l.id) || 0,
+      };
+    });
+
+    const categoryDetails = categories.map((cat) => {
+      const catLessons = lessonDetails.filter((l) => l.category_id === cat.id);
+      const totalPossibleReads = catLessons.reduce((sum, l) => sum + l.max_stages, 0);
+      const completedReads = catLessons.reduce((sum, l) => sum + l.current_stage, 0);
+      const completedLessons = catLessons.filter((l) => l.is_fully_completed).length;
+      const percentage = totalPossibleReads > 0
+        ? Math.min(100, Math.round((completedReads / totalPossibleReads) * 100))
+        : 0;
+
+      return {
+        id: cat.id,
+        name: cat.name,
+        icon: cat.icon || '📚',
+        total_lessons: catLessons.length,
+        completed_lessons: completedLessons,
+        completed_reads: completedReads,
+        total_possible_reads: totalPossibleReads,
+        percentage,
+      };
+    });
+
+    res.json({
+      student,
+      categories: categoryDetails,
+      lessons: lessonDetails,
+    });
+  } catch (err) {
+    console.error('Admin fetch single student progress error:', err);
+    res.status(500).json({ error: 'Failed to fetch student progress details.' });
   }
 });
 

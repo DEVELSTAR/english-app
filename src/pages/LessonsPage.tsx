@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { api } from '../services/api';
-import { Lesson, Category } from '../types/database';
+import { Lesson, Category, LessonCardProgress } from '../types/database';
 import { formatISTDate, formatLessonDisplayDate } from '../lib/dateUtils';
-import { BookOpen, Search, ArrowRight, Loader2, Calendar, Sparkles } from 'lucide-react';
+import { BookOpen, Search, ArrowRight, Loader2, Calendar, Sparkles, CheckCircle2, Lock } from 'lucide-react';
 
 export default function LessonsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -11,6 +11,7 @@ export default function LessonsPage() {
 
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [progressMap, setProgressMap] = useState<Record<number, LessonCardProgress>>({});
   const [search, setSearch] = useState('');
   const [isLoading, setIsLoading] = useState(true);
 
@@ -18,12 +19,14 @@ export default function LessonsPage() {
     async function load() {
       setIsLoading(true);
       try {
-        const [categoriesData, lessonsData] = await Promise.all([
+        const [categoriesData, lessonsData, progressData] = await Promise.all([
           api.getCategories(),
           api.getLessons({ status: 1 }),
+          api.getLessonsProgress().catch(() => ({})),
         ]);
         setCategories(categoriesData);
         setLessons(lessonsData);
+        setProgressMap(progressData || {});
       } catch (err) {
         console.error('Failed to load lessons or categories:', err);
       } finally {
@@ -124,12 +127,20 @@ export default function LessonsPage() {
           {filtered.map((lesson) => {
             const catName = lesson.category?.name || 'Lesson';
             const catIcon = lesson.category?.icon || '📚';
+            const prog = progressMap[lesson.id];
+            const maxStages = prog?.max_stages ?? (lesson.requires_revision !== false ? (lesson.revision_count || 4) : 1);
+            const currentStage = prog?.current_stage ?? 0;
+            const isCompleted = prog?.is_fully_completed ?? false;
 
             return (
               <Link
                 key={lesson.id}
                 to={`/lessons/${lesson.id}`}
-                className="bg-white p-6 rounded-3xl border border-slate-200/90 hover:border-brand-500/60 hover:shadow-md transition flex flex-col justify-between group shadow-2xs"
+                className={`bg-white p-6 rounded-3xl border transition flex flex-col justify-between group shadow-2xs ${
+                  isCompleted
+                    ? 'border-emerald-200/90 hover:border-emerald-400 hover:shadow-md'
+                    : 'border-slate-200/90 hover:border-brand-500/60 hover:shadow-md'
+                }`}
               >
                 <div className="space-y-3">
                   <div className="flex items-center justify-between gap-2">
@@ -152,9 +163,40 @@ export default function LessonsPage() {
                   </p>
                 </div>
 
-                <div className="pt-4 mt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-brand-600">
-                  <span>Start Learning</span>
-                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition" />
+                <div className="pt-4 mt-3 border-t border-slate-100 flex items-center justify-between gap-2 text-xs font-bold">
+                  <span className="inline-flex items-center gap-1.5 text-brand-600">
+                    <span>{isCompleted ? 'Review Lesson' : 'Start Learning'}</span>
+                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition" />
+                  </span>
+
+                  {isCompleted ? (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                      <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                      <span>Completed</span>
+                    </span>
+                  ) : (
+                    <span
+                      className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold font-mono border ${
+                        currentStage > 0
+                          ? prog?.is_unlocked
+                            ? 'bg-amber-50 text-amber-700 border-amber-200'
+                            : 'bg-brand-50 text-brand-700 border-brand-200'
+                          : 'bg-slate-50 text-slate-500 border-slate-200'
+                      }`}
+                      title={
+                        currentStage > 0 && !prog?.is_unlocked
+                          ? 'Next read is currently locked'
+                          : `${currentStage} of ${maxStages} reads completed`
+                      }
+                    >
+                      {currentStage > 0 && !prog?.is_unlocked && (
+                        <Lock className="w-2.5 h-2.5 text-brand-500" />
+                      )}
+                      <span>
+                        {currentStage}/{maxStages}
+                      </span>
+                    </span>
+                  )}
                 </div>
               </Link>
             );

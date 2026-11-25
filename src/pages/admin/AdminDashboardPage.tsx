@@ -150,6 +150,7 @@ export default function AdminDashboardPage() {
                   <th className="py-3.5 px-5">Title</th>
                   <th className="py-3.5 px-5">Date</th>
                   <th className="py-3.5 px-5">Category</th>
+                  <th className="py-3.5 px-5">Stages</th>
                   <th className="py-3.5 px-5">Status</th>
                   <th className="py-3.5 px-5 text-right">Actions</th>
                 </tr>
@@ -172,6 +173,17 @@ export default function AdminDashboardPage() {
                       ) : (
                         <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-500">
                           Uncategorized
+                        </span>
+                      )}
+                    </td>
+                    <td className="py-3.5 px-5">
+                      {lesson.requires_revision !== false ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-brand-50 text-brand-700 border border-brand-100 font-mono">
+                          {lesson.revision_count || 4} Stages
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 text-slate-600 font-mono">
+                          1 Stage
                         </span>
                       )}
                     </td>
