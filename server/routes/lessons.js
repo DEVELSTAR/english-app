@@ -479,8 +479,23 @@ router.get('/:id/revision-status', requireAuth, async (req, res) => {
       [userId, id]
     );
     const rev = revs[0] || null;
-    const currentStage = rev ? rev.current_stage : 0;
-    const isFullyCompleted = Boolean(rev?.is_fully_completed || (currentStage >= maxStages));
+
+    let currentStage = rev ? rev.current_stage : 0;
+    let isFullyCompleted = Boolean(rev?.is_fully_completed || (currentStage >= maxStages));
+    let completedAt = rev?.completed_at || null;
+
+    if (!rev) {
+      const [comps] = await pool.query(
+        'SELECT completed, completed_at FROM lesson_completions WHERE user_id = ? AND lesson_id = ? AND completed = 1',
+        [userId, id]
+      );
+      if (comps.length > 0) {
+        currentStage = maxStages;
+        isFullyCompleted = true;
+        completedAt = comps[0].completed_at || null;
+      }
+    }
+
     const nextUnlockAt = rev?.next_unlock_at || null;
 
     let isUnlocked = false;
@@ -514,7 +529,7 @@ router.get('/:id/revision-status', requireAuth, async (req, res) => {
       is_unlocked: isUnlocked,
       next_unlock_at: nextUnlockAt,
       is_fully_completed: isFullyCompleted,
-      completed_at: rev?.completed_at || null,
+      completed_at: completedAt,
       requirements: {
         has_note: hasNote,
         has_comment: hasComment,

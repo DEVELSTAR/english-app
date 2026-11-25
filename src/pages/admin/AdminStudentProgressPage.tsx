@@ -20,6 +20,7 @@ export default function AdminStudentProgressPage() {
   const [students, setStudents] = useState<AdminStudentProgressSummary[]>([]);
   const [search, setSearch] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // Selected Student Detail State
   const [selectedDetail, setSelectedDetail] = useState<AdminStudentProgressDetail | null>(null);
@@ -29,11 +30,13 @@ export default function AdminStudentProgressPage() {
   useEffect(() => {
     async function load() {
       setIsLoading(true);
+      setError(null);
       try {
         const data = await api.getAdminStudentsProgress();
         setStudents(data);
-      } catch (err) {
+      } catch (err: any) {
         console.error('Failed to load student progress:', err);
+        setError(err.message || 'Failed to load student progress.');
       } finally {
         setIsLoading(false);
       }
@@ -99,6 +102,10 @@ export default function AdminStudentProgressPage() {
           <div className="py-20 text-center text-slate-400 flex items-center justify-center gap-2">
             <Loader2 className="w-5 h-5 animate-spin text-brand-600" />
             <span className="text-xs">Loading student progress...</span>
+          </div>
+        ) : error ? (
+          <div className="py-16 text-center text-rose-600 text-xs font-semibold px-4">
+            {error}
           </div>
         ) : filteredStudents.length === 0 ? (
           <div className="py-16 text-center text-slate-500 text-xs">No students found.</div>

@@ -33,6 +33,13 @@ router.get('/categories', requireAuth, async (req, res) => {
       [userId]
     );
 
+    // Fetch legacy completed lessons
+    const [completions] = await pool.query(
+      `SELECT lesson_id FROM lesson_completions WHERE user_id = ? AND completed = 1`,
+      [userId]
+    );
+    const completedSet = new Set(completions.map((c) => c.lesson_id));
+
     const revMap = new Map();
     for (const r of revisions) {
       revMap.set(r.lesson_id, r);
@@ -72,6 +79,9 @@ router.get('/categories', requireAuth, async (req, res) => {
               revisionsDueCount++;
             }
           }
+        } else if (completedSet.has(lesson.id)) {
+          completedReads += maxStages;
+          completedLessons++;
         }
       }
 
@@ -133,6 +143,12 @@ router.get('/lessons', requireAuth, async (req, res) => {
       [userId]
     );
 
+    const [completions] = await pool.query(
+      `SELECT lesson_id FROM lesson_completions WHERE user_id = ? AND completed = 1`,
+      [userId]
+    );
+    const completedSet = new Set(completions.map((c) => c.lesson_id));
+
     const revMap = new Map();
     for (const r of revisions) {
       revMap.set(r.lesson_id, r);
@@ -146,9 +162,14 @@ router.get('/lessons', requireAuth, async (req, res) => {
       const maxStages = requiresRev ? (lesson.revision_count || 4) : 1;
       const rev = revMap.get(lesson.id);
 
-      const currentStage = rev ? (rev.current_stage || 0) : 0;
-      const isFullyCompleted = Boolean(rev?.is_fully_completed || currentStage >= maxStages);
+      let currentStage = rev ? (rev.current_stage || 0) : 0;
+      let isFullyCompleted = Boolean(rev?.is_fully_completed || currentStage >= maxStages);
       const nextUnlockAt = rev?.next_unlock_at || null;
+
+      if (!rev && completedSet.has(lesson.id)) {
+        currentStage = maxStages;
+        isFullyCompleted = true;
+      }
 
       let isUnlocked = false;
       if (currentStage === 0) {
@@ -205,6 +226,12 @@ router.get('/admin/students', requireAdmin, async (req, res) => {
        FROM student_lesson_revisions`
     );
 
+    const [completions] = await pool.query(
+      `SELECT user_id, lesson_id, updated_at
+       FROM lesson_completions
+       WHERE completed = 1`
+    );
+
     const [notesCounts] = await pool.query(
       `SELECT user_id, COUNT(*) as cnt FROM notes GROUP BY user_id`
     );
@@ -218,6 +245,10 @@ router.get('/admin/students', requireAdmin, async (req, res) => {
     const result = students.map((student) => {
       const studentRevs = revisions.filter(
         (r) => r.user_id === student.id && lessonMaxMap.has(r.lesson_id)
+      );
+      const revLessonIds = new Set(studentRevs.map((r) => r.lesson_id));
+      const studentLegacyComps = completions.filter(
+        (c) => c.user_id === student.id && lessonMaxMap.has(c.lesson_id) && !revLessonIds.has(c.lesson_id)
       );
 
       let completedReads = 0;
@@ -238,6 +269,15 @@ router.get('/admin/students', requireAdmin, async (req, res) => {
 
         if (rev.updated_at && (!lastActivityAt || new Date(rev.updated_at) > new Date(lastActivityAt))) {
           lastActivityAt = rev.updated_at;
+        }
+      }
+
+      for (const comp of studentLegacyComps) {
+        const maxStages = lessonMaxMap.get(comp.lesson_id) || 4;
+        completedReads += maxStages;
+        completedLessons++;
+        if (comp.updated_at && (!lastActivityAt || new Date(comp.updated_at) > new Date(lastActivityAt))) {
+          lastActivityAt = comp.updated_at;
         }
       }
 
@@ -307,6 +347,14 @@ router.get('/admin/students/:studentId', requireAdmin, async (req, res) => {
     );
     const revMap = new Map(revisions.map((r) => [r.lesson_id, r]));
 
+    const [completions] = await pool.query(
+      `SELECT lesson_id, completed_at, updated_at
+       FROM lesson_completions
+       WHERE user_id = ? AND completed = 1`,
+      [studentId]
+    );
+    const compMap = new Map(completions.map((c) => [c.lesson_id, c]));
+
     const [notesRows] = await pool.query(
       `SELECT lesson_id, COUNT(*) as cnt FROM notes WHERE user_id = ? AND lesson_id IS NOT NULL GROUP BY lesson_id`,
       [studentId]
@@ -322,8 +370,9 @@ router.get('/admin/students/:studentId', requireAdmin, async (req, res) => {
     const lessonDetails = lessons.map((l) => {
       const maxStages = l.requires_revision !== 0 ? (l.revision_count || 4) : 1;
       const rev = revMap.get(l.id);
-      const currentStage = rev ? Math.min(rev.current_stage || 0, maxStages) : 0;
-      const isFullyCompleted = Boolean(rev?.is_fully_completed || currentStage >= maxStages);
+      const comp = !rev ? compMap.get(l.id) : null;
+      const currentStage = rev ? Math.min(rev.current_stage || 0, maxStages) : comp ? maxStages : 0;
+      const isFullyCompleted = Boolean(rev?.is_fully_completed || currentStage >= maxStages || comp);
 
       return {
         lesson_id: l.id,
@@ -336,8 +385,8 @@ router.get('/admin/students/:studentId', requireAdmin, async (req, res) => {
         max_stages: maxStages,
         is_fully_completed: isFullyCompleted,
         next_unlock_at: rev?.next_unlock_at || null,
-        completed_at: rev?.completed_at || null,
-        updated_at: rev?.updated_at || null,
+        completed_at: rev?.completed_at || comp?.completed_at || null,
+        updated_at: rev?.updated_at || comp?.updated_at || null,
         notes_count: notesMap.get(l.id) || 0,
         comments_count: commentsMap.get(l.id) || 0,
       };
