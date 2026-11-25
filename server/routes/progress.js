@@ -80,8 +80,12 @@ router.get('/categories', requireAuth, async (req, res) => {
             }
           }
         } else if (completedSet.has(lesson.id)) {
-          completedReads += maxStages;
-          completedLessons++;
+          completedReads += 1;
+          if (maxStages <= 1) {
+            completedLessons++;
+          } else {
+            inProgressLessons++;
+          }
         }
       }
 
@@ -167,8 +171,8 @@ router.get('/lessons', requireAuth, async (req, res) => {
       const nextUnlockAt = rev?.next_unlock_at || null;
 
       if (!rev && completedSet.has(lesson.id)) {
-        currentStage = maxStages;
-        isFullyCompleted = true;
+        currentStage = 1;
+        isFullyCompleted = maxStages <= 1;
       }
 
       let isUnlocked = false;
@@ -274,8 +278,12 @@ router.get('/admin/students', requireAdmin, async (req, res) => {
 
       for (const comp of studentLegacyComps) {
         const maxStages = lessonMaxMap.get(comp.lesson_id) || 4;
-        completedReads += maxStages;
-        completedLessons++;
+        completedReads += 1;
+        if (maxStages <= 1) {
+          completedLessons++;
+        } else {
+          inProgressLessons++;
+        }
         if (comp.updated_at && (!lastActivityAt || new Date(comp.updated_at) > new Date(lastActivityAt))) {
           lastActivityAt = comp.updated_at;
         }
@@ -371,8 +379,8 @@ router.get('/admin/students/:studentId', requireAdmin, async (req, res) => {
       const maxStages = l.requires_revision !== 0 ? (l.revision_count || 4) : 1;
       const rev = revMap.get(l.id);
       const comp = !rev ? compMap.get(l.id) : null;
-      const currentStage = rev ? Math.min(rev.current_stage || 0, maxStages) : comp ? maxStages : 0;
-      const isFullyCompleted = Boolean(rev?.is_fully_completed || currentStage >= maxStages || comp);
+      const currentStage = rev ? Math.min(rev.current_stage || 0, maxStages) : comp ? 1 : 0;
+      const isFullyCompleted = Boolean(rev?.is_fully_completed || currentStage >= maxStages);
 
       return {
         lesson_id: l.id,

@@ -490,9 +490,9 @@ router.get('/:id/revision-status', requireAuth, async (req, res) => {
         [userId, id]
       );
       if (comps.length > 0) {
-        currentStage = maxStages;
-        isFullyCompleted = true;
-        completedAt = comps[0].completed_at || null;
+        currentStage = 1;
+        isFullyCompleted = maxStages <= 1;
+        completedAt = isFullyCompleted ? (comps[0].completed_at || null) : null;
       }
     }
 
@@ -567,7 +567,17 @@ router.post('/:id/complete-stage', requireAuth, async (req, res) => {
       [userId, id]
     );
     const rev = revs[0] || null;
-    const currentStage = rev ? rev.current_stage : 0;
+    let currentStage = rev ? rev.current_stage : 0;
+
+    if (!rev) {
+      const [comps] = await pool.query(
+        'SELECT completed FROM lesson_completions WHERE user_id = ? AND lesson_id = ? AND completed = 1',
+        [userId, id]
+      );
+      if (comps.length > 0) {
+        currentStage = 1;
+      }
+    }
 
     if (currentStage >= maxStages) {
       return res.status(400).json({ error: 'All revision reads for this lesson have already been completed.' });
