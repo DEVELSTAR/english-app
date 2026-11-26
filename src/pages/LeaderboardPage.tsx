@@ -200,55 +200,52 @@ export default function LeaderboardPage() {
               </span>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+            <div className="grid grid-cols-3 gap-2 sm:gap-4 items-end">
               {/* 2nd Place */}
               {second && (
-                <div className="order-2 md:order-1 flex flex-col">
+                <div className="flex flex-col">
                   <div
-                    className={`bg-white rounded-t-3xl rounded-b-2xl md:rounded-b-none p-5 border border-b-0 shadow-xs flex flex-col items-center text-center space-y-3 ${
+                    className={`bg-white rounded-t-2xl sm:rounded-t-3xl p-2.5 sm:p-5 border border-b-0 shadow-xs flex flex-col items-center text-center space-y-1.5 sm:space-y-3 ${
                       second.is_current_user
                         ? 'border-brand-400 ring-2 ring-brand-100'
                         : 'border-slate-200/90'
                     }`}
                   >
-                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 text-[11px] font-extrabold border border-slate-200">
-                      <Medal className="w-3 h-3 text-slate-500" />
-                      <span>2nd Place</span>
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 text-[10px] sm:text-[11px] font-extrabold border border-slate-200">
+                      <Medal className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-slate-500" />
+                      <span>2nd</span>
                     </span>
 
-                    {renderAvatar(second, 'w-14 h-14 text-2xl')}
+                    {renderAvatar(second, 'w-10 h-10 sm:w-14 sm:h-14 text-lg sm:text-2xl')}
 
-                    <div>
-                      <h3 className="text-base font-bold text-slate-900 flex items-center justify-center gap-1.5">
-                        <span>{second.name}</span>
-                        {second.is_current_user && (
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-brand-600 text-white">
-                            You
-                          </span>
-                        )}
+                    <div className="w-full min-w-0">
+                      <h3 className="text-xs sm:text-base font-bold text-slate-900 truncate">
+                        {second.name}
                       </h3>
-                      <p className="text-[11px] text-slate-400 font-medium mt-0.5">
-                        {second.completed_lessons} Mastered
-                      </p>
+                      {second.is_current_user && (
+                        <span className="inline-block mt-0.5 px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-brand-600 text-white">
+                          You
+                        </span>
+                      )}
                     </div>
 
-                    <div className="w-full pt-2 border-t border-slate-100 flex items-center justify-around text-xs">
+                    <div className="w-full pt-1.5 sm:pt-2 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-around gap-0.5 text-xs">
                       <div>
-                        <div className="font-black text-slate-800 font-mono text-base">
+                        <div className="font-black text-slate-800 font-mono text-xs sm:text-base">
                           {second.overall_percentage}%
                         </div>
-                        <div className="text-[10px] text-slate-400 font-semibold">Mastery</div>
+                        <div className="hidden sm:block text-[10px] text-slate-400 font-semibold">Mastery</div>
                       </div>
-                      <div className="h-6 w-px bg-slate-100" />
+                      <div className="hidden sm:block h-6 w-px bg-slate-100" />
                       <div>
-                        <div className="font-black text-brand-600 font-mono text-base">
-                          {second.completed_reads}
+                        <div className="font-black text-brand-600 font-mono text-xs sm:text-base">
+                          {second.completed_reads} <span className="sm:hidden text-[9px] font-semibold text-slate-400">reads</span>
                         </div>
-                        <div className="text-[10px] text-slate-400 font-semibold">Reads</div>
+                        <div className="hidden sm:block text-[10px] text-slate-400 font-semibold">Reads</div>
                       </div>
                     </div>
                   </div>
-                  <div className="hidden md:flex h-10 rounded-b-3xl bg-gradient-to-b from-slate-200 to-slate-300 border border-t-0 border-slate-300 items-center justify-center font-black font-mono text-slate-600 text-sm">
+                  <div className="flex h-7 sm:h-10 rounded-b-2xl sm:rounded-b-3xl bg-gradient-to-b from-slate-200 to-slate-300 border border-t-0 border-slate-300 items-center justify-center font-black font-mono text-slate-600 text-xs sm:text-sm">
                     #2
                   </div>
                 </div>
@@ -256,52 +253,49 @@ export default function LeaderboardPage() {
 
               {/* 1st Place (Tallest Center Pedestal) */}
               {first && (
-                <div className="order-1 md:order-2 flex flex-col">
+                <div className="flex flex-col">
                   <div
-                    className={`bg-gradient-to-b from-amber-50 via-white to-white rounded-t-3xl rounded-b-2xl md:rounded-b-none p-6 border-2 border-b-0 shadow-lg flex flex-col items-center text-center space-y-3 ${
+                    className={`bg-gradient-to-b from-amber-50 via-white to-white rounded-t-2xl sm:rounded-t-3xl p-3 sm:p-6 border-2 border-b-0 shadow-lg flex flex-col items-center text-center space-y-1.5 sm:space-y-3 ${
                       first.is_current_user
-                        ? 'border-amber-400 ring-4 ring-amber-100'
+                        ? 'border-amber-400 ring-2 sm:ring-4 ring-amber-100'
                         : 'border-amber-300'
                     }`}
                   >
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500 text-white text-[11px] font-extrabold shadow-xs">
-                      <Crown className="w-3.5 h-3.5" />
-                      <span>1st Place</span>
+                    <span className="inline-flex items-center gap-1 px-2 sm:px-3 py-0.5 sm:py-1 rounded-full bg-amber-500 text-white text-[10px] sm:text-[11px] font-extrabold shadow-xs">
+                      <Crown className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                      <span>1st</span>
                     </span>
 
-                    {renderAvatar(first, 'w-16 h-16 text-3xl ring-4 ring-amber-200')}
+                    {renderAvatar(first, 'w-12 h-12 sm:w-16 sm:h-16 text-xl sm:text-3xl ring-2 sm:ring-4 ring-amber-200')}
 
-                    <div>
-                      <h3 className="text-lg font-black text-slate-900 flex items-center justify-center gap-1.5">
-                        <span>{first.name}</span>
-                        {first.is_current_user && (
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-brand-600 text-white">
-                            You
-                          </span>
-                        )}
+                    <div className="w-full min-w-0">
+                      <h3 className="text-xs sm:text-lg font-black text-slate-900 truncate">
+                        {first.name}
                       </h3>
-                      <p className="text-xs text-amber-700/80 font-semibold mt-0.5">
-                        {first.completed_lessons} Mastered
-                      </p>
+                      {first.is_current_user && (
+                        <span className="inline-block mt-0.5 px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-brand-600 text-white">
+                          You
+                        </span>
+                      )}
                     </div>
 
-                    <div className="w-full pt-3 border-t border-amber-100 flex items-center justify-around text-xs">
+                    <div className="w-full pt-1.5 sm:pt-3 border-t border-amber-100 flex flex-col sm:flex-row items-center justify-around gap-0.5 text-xs">
                       <div>
-                        <div className="font-black text-amber-600 font-mono text-lg">
+                        <div className="font-black text-amber-600 font-mono text-sm sm:text-lg">
                           {first.overall_percentage}%
                         </div>
-                        <div className="text-[10px] text-slate-500 font-semibold">Mastery</div>
+                        <div className="hidden sm:block text-[10px] text-slate-500 font-semibold">Mastery</div>
                       </div>
-                      <div className="h-7 w-px bg-amber-100" />
+                      <div className="hidden sm:block h-7 w-px bg-amber-100" />
                       <div>
-                        <div className="font-black text-slate-900 font-mono text-lg">
-                          {first.completed_reads}
+                        <div className="font-black text-slate-900 font-mono text-xs sm:text-lg">
+                          {first.completed_reads} <span className="sm:hidden text-[9px] font-semibold text-slate-400">reads</span>
                         </div>
-                        <div className="text-[10px] text-slate-500 font-semibold">Reads</div>
+                        <div className="hidden sm:block text-[10px] text-slate-500 font-semibold">Reads</div>
                       </div>
                     </div>
                   </div>
-                  <div className="hidden md:flex h-16 rounded-b-3xl bg-gradient-to-b from-amber-300 to-amber-400 border-2 border-t-0 border-amber-400 items-center justify-center font-black font-mono text-amber-950 text-base shadow-md">
+                  <div className="flex h-11 sm:h-16 rounded-b-2xl sm:rounded-b-3xl bg-gradient-to-b from-amber-300 to-amber-400 border-2 border-t-0 border-amber-400 items-center justify-center font-black font-mono text-amber-950 text-sm sm:text-base shadow-md">
                     #1
                   </div>
                 </div>
@@ -309,52 +303,49 @@ export default function LeaderboardPage() {
 
               {/* 3rd Place */}
               {third && (
-                <div className="order-3 flex flex-col">
+                <div className="flex flex-col">
                   <div
-                    className={`bg-white rounded-t-3xl rounded-b-2xl md:rounded-b-none p-5 border border-b-0 shadow-xs flex flex-col items-center text-center space-y-3 ${
+                    className={`bg-white rounded-t-2xl sm:rounded-t-3xl p-2.5 sm:p-5 border border-b-0 shadow-xs flex flex-col items-center text-center space-y-1.5 sm:space-y-3 ${
                       third.is_current_user
                         ? 'border-brand-400 ring-2 ring-brand-100'
                         : 'border-orange-200/80'
                     }`}
                   >
-                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-orange-50 text-orange-700 text-[11px] font-extrabold border border-orange-200">
-                      <Award className="w-3 h-3 text-orange-500" />
-                      <span>3rd Place</span>
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-orange-50 text-orange-700 text-[10px] sm:text-[11px] font-extrabold border border-orange-200">
+                      <Award className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-orange-500" />
+                      <span>3rd</span>
                     </span>
 
-                    {renderAvatar(third, 'w-14 h-14 text-2xl')}
+                    {renderAvatar(third, 'w-10 h-10 sm:w-14 sm:h-14 text-lg sm:text-2xl')}
 
-                    <div>
-                      <h3 className="text-base font-bold text-slate-900 flex items-center justify-center gap-1.5">
-                        <span>{third.name}</span>
-                        {third.is_current_user && (
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-brand-600 text-white">
-                            You
-                          </span>
-                        )}
+                    <div className="w-full min-w-0">
+                      <h3 className="text-xs sm:text-base font-bold text-slate-900 truncate">
+                        {third.name}
                       </h3>
-                      <p className="text-[11px] text-slate-400 font-medium mt-0.5">
-                        {third.completed_lessons} Mastered
-                      </p>
+                      {third.is_current_user && (
+                        <span className="inline-block mt-0.5 px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-brand-600 text-white">
+                          You
+                        </span>
+                      )}
                     </div>
 
-                    <div className="w-full pt-2 border-t border-slate-100 flex items-center justify-around text-xs">
+                    <div className="w-full pt-1.5 sm:pt-2 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-around gap-0.5 text-xs">
                       <div>
-                        <div className="font-black text-slate-800 font-mono text-base">
+                        <div className="font-black text-slate-800 font-mono text-xs sm:text-base">
                           {third.overall_percentage}%
                         </div>
-                        <div className="text-[10px] text-slate-400 font-semibold">Mastery</div>
+                        <div className="hidden sm:block text-[10px] text-slate-400 font-semibold">Mastery</div>
                       </div>
-                      <div className="h-6 w-px bg-slate-100" />
+                      <div className="hidden sm:block h-6 w-px bg-slate-100" />
                       <div>
-                        <div className="font-black text-brand-600 font-mono text-base">
-                          {third.completed_reads}
+                        <div className="font-black text-brand-600 font-mono text-xs sm:text-base">
+                          {third.completed_reads} <span className="sm:hidden text-[9px] font-semibold text-slate-400">reads</span>
                         </div>
-                        <div className="text-[10px] text-slate-400 font-semibold">Reads</div>
+                        <div className="hidden sm:block text-[10px] text-slate-400 font-semibold">Reads</div>
                       </div>
                     </div>
                   </div>
-                  <div className="hidden md:flex h-7 rounded-b-3xl bg-gradient-to-b from-orange-200 to-orange-300 border border-t-0 border-orange-300 items-center justify-center font-black font-mono text-orange-900 text-xs">
+                  <div className="flex h-5 sm:h-7 rounded-b-2xl sm:rounded-b-3xl bg-gradient-to-b from-orange-200 to-orange-300 border border-t-0 border-orange-300 items-center justify-center font-black font-mono text-orange-900 text-[11px] sm:text-xs">
                     #3
                   </div>
                 </div>
@@ -447,10 +438,10 @@ export default function LeaderboardPage() {
                         : 'bg-slate-50/40 border-slate-100'
                     }`}
                   >
-                    <div className="flex items-center justify-between gap-3 mb-2">
-                      <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+                      <div className="flex items-center gap-2 min-w-0 flex-1">
                         <span
-                          className={`w-7 h-7 rounded-xl flex items-center justify-center text-[11px] font-black font-mono shrink-0 ${
+                          className={`w-6 h-6 sm:w-7 sm:h-7 rounded-lg sm:rounded-xl flex items-center justify-center text-[11px] font-black font-mono shrink-0 ${
                             entry.rank === 1
                               ? 'bg-amber-500 text-white'
                               : entry.rank === 2
@@ -462,27 +453,27 @@ export default function LeaderboardPage() {
                         >
                           {entry.rank}
                         </span>
-                        {renderAvatar(entry, 'w-8 h-8 text-sm')}
+                        {renderAvatar(entry, 'w-7 h-7 sm:w-8 sm:h-8 text-sm')}
                         <div className="min-w-0">
                           <div className="flex items-center gap-1.5">
                             <span className="text-xs font-bold text-slate-900 truncate">
                               {entry.name}
                             </span>
                             {entry.is_current_user && (
-                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-brand-600 text-white shrink-0">
+                              <span className="px-1.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold bg-brand-600 text-white shrink-0">
                                 You
                               </span>
                             )}
                           </div>
-                          <div className="text-[10px] text-slate-400 font-medium">
+                          <div className="hidden sm:block text-[10px] text-slate-400 font-medium">
                             {entry.completed_lessons} mastered • {entry.notes_count} notes • {entry.comments_count} comments
                           </div>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-3 shrink-0 text-xs">
+                      <div className="flex items-center gap-2 shrink-0 text-[11px] sm:text-xs">
                         <span className="font-mono font-bold text-slate-700">
-                          {entry.completed_reads}/{entry.total_possible_reads} Reads
+                          {entry.completed_reads}/{entry.total_possible_reads}
                         </span>
                         <span className="px-2 py-0.5 rounded-lg bg-white border border-slate-200 font-mono font-black text-brand-600">
                           {entry.overall_percentage}%

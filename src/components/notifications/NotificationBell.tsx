@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { Bell, Check, CheckCheck, Loader2, Sparkles, X } from 'lucide-react';
 import { api } from '../../services/api';
@@ -140,110 +141,191 @@ export default function NotificationBell() {
         )}
       </button>
 
-      {/* Dropdown Menu (Desktop popover + Mobile modal/drawer) */}
+      {/* Desktop Popover */}
       {isOpen && (
-        <>
-          {/* Mobile Backdrop */}
-          <div
-            className="fixed inset-0 bg-slate-900/50 backdrop-blur-2xs z-50 md:hidden animate-in fade-in duration-200"
-            onClick={() => setIsOpen(false)}
-          />
-
-          {/* Container */}
-          <div className="fixed inset-x-3 bottom-3 top-auto md:absolute md:inset-auto md:right-0 md:top-full md:mt-2 w-auto md:w-96 max-h-[85vh] md:max-h-[520px] bg-white rounded-3xl md:rounded-2xl shadow-2xl border border-slate-200/90 z-50 flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-3 md:slide-in-from-top-2 duration-200">
-            {/* Header */}
-            <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between bg-slate-50/70 shrink-0">
-              <div className="flex items-center gap-2">
-                <h3 className="text-sm font-extrabold text-slate-900">Notifications</h3>
-                {unreadCount > 0 && (
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-brand-100 text-brand-700">
-                    {unreadCount} new
-                  </span>
-                )}
-              </div>
-
-              <div className="flex items-center gap-1.5">
-                {unreadCount > 0 && (
-                  <button
-                    type="button"
-                    onClick={handleMarkAllRead}
-                    disabled={isMarkingAll}
-                    className="text-[11px] font-bold text-brand-600 hover:text-brand-800 disabled:opacity-50 transition cursor-pointer px-2 py-1 rounded-lg hover:bg-brand-50"
-                  >
-                    {isMarkingAll ? 'Marking...' : 'Mark all read'}
-                  </button>
-                )}
-                <button
-                  type="button"
-                  onClick={() => setIsOpen(false)}
-                  className="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center transition cursor-pointer md:hidden"
-                  aria-label="Close"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-
-            {/* Notifications List (Scrollable) */}
-            <div className="flex-1 overflow-y-auto divide-y divide-slate-100 p-1">
-              {notifications.length === 0 ? (
-                <div className="py-12 px-4 text-center space-y-2">
-                  <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto text-xl">
-                    🔔
-                  </div>
-                  <p className="text-xs font-bold text-slate-700">No notifications yet</p>
-                  <p className="text-[11px] text-slate-400 max-w-[220px] mx-auto leading-relaxed">
-                    You'll be alerted when new lessons are added or when classmates react to your notes & comments!
-                  </p>
-                </div>
-              ) : (
-                notifications.map((notif) => (
-                  <button
-                    key={notif.id}
-                    type="button"
-                    onClick={() => handleNotificationClick(notif)}
-                    className={`w-full text-left p-3 rounded-2xl transition-all flex items-start gap-3 cursor-pointer ${
-                      notif.is_read
-                        ? 'hover:bg-slate-50 text-slate-700'
-                        : 'bg-brand-50/50 hover:bg-brand-50 text-slate-900 font-medium'
-                    }`}
-                  >
-                    <div className="w-9 h-9 rounded-xl bg-white shadow-2xs border border-slate-200/80 flex items-center justify-center shrink-0 mt-0.5">
-                      {getTypeIcon(notif.type)}
-                    </div>
-
-                    <div className="flex-1 min-w-0 space-y-1">
-                      <div className="flex items-center justify-between gap-1">
-                        <p className="text-xs font-bold text-slate-900 truncate">{notif.title}</p>
-                        {!notif.is_read && (
-                          <span className="w-2 h-2 rounded-full bg-brand-600 shrink-0" />
-                        )}
-                      </div>
-
-                      <p className="text-xs text-slate-600 leading-snug line-clamp-2">
-                        {notif.message}
-                      </p>
-
-                      <p className="text-[10px] text-slate-400 font-medium">
-                        {formatTimeAgo(notif.created_at)}
-                      </p>
-                    </div>
-                  </button>
-                ))
+        <div className="hidden md:flex absolute right-0 top-full mt-2 w-96 max-h-[520px] bg-white rounded-2xl shadow-2xl border border-slate-200/90 z-50 flex-col overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+          {/* Header */}
+          <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between bg-slate-50/70 shrink-0">
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-extrabold text-slate-900">Notifications</h3>
+              {unreadCount > 0 && (
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-brand-100 text-brand-700">
+                  {unreadCount} new
+                </span>
               )}
             </div>
 
-            {/* Bottom Footer */}
-            {notifications.length > 0 && (
-              <div className="p-2 border-t border-slate-100 bg-slate-50/50 text-center shrink-0">
-                <span className="text-[10px] font-semibold text-slate-400">
-                  Timestamps shown in Indian Standard Time (IST)
-                </span>
-              </div>
+            {unreadCount > 0 && (
+              <button
+                type="button"
+                onClick={handleMarkAllRead}
+                disabled={isMarkingAll}
+                className="text-[11px] font-bold text-brand-600 hover:text-brand-800 disabled:opacity-50 transition cursor-pointer px-2 py-1 rounded-lg hover:bg-brand-50"
+              >
+                {isMarkingAll ? 'Marking...' : 'Mark all read'}
+              </button>
             )}
           </div>
-        </>
+
+          {/* Notifications List (Scrollable) */}
+          <div className="flex-1 overflow-y-auto divide-y divide-slate-100 p-1">
+            {notifications.length === 0 ? (
+              <div className="py-12 px-4 text-center space-y-2">
+                <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto text-xl">
+                  🔔
+                </div>
+                <p className="text-xs font-bold text-slate-700">No notifications yet</p>
+                <p className="text-[11px] text-slate-400 max-w-[220px] mx-auto leading-relaxed">
+                  You'll be alerted when new lessons are added or when classmates react to your notes & comments!
+                </p>
+              </div>
+            ) : (
+              notifications.map((notif) => (
+                <button
+                  key={notif.id}
+                  type="button"
+                  onClick={() => handleNotificationClick(notif)}
+                  className={`w-full text-left p-3 rounded-2xl transition-all flex items-start gap-3 cursor-pointer ${
+                    notif.is_read
+                      ? 'hover:bg-slate-50 text-slate-700'
+                      : 'bg-brand-50/50 hover:bg-brand-50 text-slate-900 font-medium'
+                  }`}
+                >
+                  <div className="w-9 h-9 rounded-xl bg-white shadow-2xs border border-slate-200/80 flex items-center justify-center shrink-0 mt-0.5">
+                    {getTypeIcon(notif.type)}
+                  </div>
+
+                  <div className="flex-1 min-w-0 space-y-1">
+                    <div className="flex items-center justify-between gap-1">
+                      <p className="text-xs font-bold text-slate-900 truncate">{notif.title}</p>
+                      {!notif.is_read && (
+                        <span className="w-2 h-2 rounded-full bg-brand-600 shrink-0" />
+                      )}
+                    </div>
+
+                    <p className="text-xs text-slate-600 leading-snug line-clamp-2">
+                      {notif.message}
+                    </p>
+
+                    <p className="text-[10px] text-slate-400 font-medium">
+                      {formatTimeAgo(notif.created_at)}
+                    </p>
+                  </div>
+                </button>
+              ))
+            )}
+          </div>
+
+          {notifications.length > 0 && (
+            <div className="p-2 border-t border-slate-100 bg-slate-50/50 text-center shrink-0">
+              <span className="text-[10px] font-semibold text-slate-400">
+                Timestamps shown in Indian Standard Time (IST)
+              </span>
+            </div>
+          )}
+        </div>
       )}
+
+      {/* Mobile Bottom Sheet rendered into document.body to bypass sticky header backdrop-filter */}
+      {isOpen &&
+        createPortal(
+          <div className="md:hidden">
+            <div
+              className="fixed inset-0 bg-slate-900/50 backdrop-blur-2xs z-50 animate-in fade-in duration-200"
+              onClick={() => setIsOpen(false)}
+            />
+            <div className="fixed inset-x-3 bottom-3 max-h-[80dvh] bg-white rounded-3xl shadow-2xl border border-slate-200/90 z-50 flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-3 duration-200">
+              <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between bg-slate-50/70 shrink-0">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-extrabold text-slate-900">Notifications</h3>
+                  {unreadCount > 0 && (
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-brand-100 text-brand-700">
+                      {unreadCount} new
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-1.5">
+                  {unreadCount > 0 && (
+                    <button
+                      type="button"
+                      onClick={handleMarkAllRead}
+                      disabled={isMarkingAll}
+                      className="text-[11px] font-bold text-brand-600 hover:text-brand-800 disabled:opacity-50 transition cursor-pointer px-2 py-1 rounded-lg hover:bg-brand-50"
+                    >
+                      {isMarkingAll ? 'Marking...' : 'Mark all read'}
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setIsOpen(false)}
+                    className="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center transition cursor-pointer"
+                    aria-label="Close"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex-1 overflow-y-auto divide-y divide-slate-100 p-1">
+                {notifications.length === 0 ? (
+                  <div className="py-12 px-4 text-center space-y-2">
+                    <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto text-xl">
+                      🔔
+                    </div>
+                    <p className="text-xs font-bold text-slate-700">No notifications yet</p>
+                    <p className="text-[11px] text-slate-400 max-w-[220px] mx-auto leading-relaxed">
+                      You'll be alerted when new lessons are added or when classmates react to your notes & comments!
+                    </p>
+                  </div>
+                ) : (
+                  notifications.map((notif) => (
+                    <button
+                      key={notif.id}
+                      type="button"
+                      onClick={() => handleNotificationClick(notif)}
+                      className={`w-full text-left p-3 rounded-2xl transition-all flex items-start gap-3 cursor-pointer ${
+                        notif.is_read
+                          ? 'hover:bg-slate-50 text-slate-700'
+                          : 'bg-brand-50/50 hover:bg-brand-50 text-slate-900 font-medium'
+                      }`}
+                    >
+                      <div className="w-9 h-9 rounded-xl bg-white shadow-2xs border border-slate-200/80 flex items-center justify-center shrink-0 mt-0.5">
+                        {getTypeIcon(notif.type)}
+                      </div>
+
+                      <div className="flex-1 min-w-0 space-y-1">
+                        <div className="flex items-center justify-between gap-1">
+                          <p className="text-xs font-bold text-slate-900 truncate">{notif.title}</p>
+                          {!notif.is_read && (
+                            <span className="w-2 h-2 rounded-full bg-brand-600 shrink-0" />
+                          )}
+                        </div>
+
+                        <p className="text-xs text-slate-600 leading-snug line-clamp-2">
+                          {notif.message}
+                        </p>
+
+                        <p className="text-[10px] text-slate-400 font-medium">
+                          {formatTimeAgo(notif.created_at)}
+                        </p>
+                      </div>
+                    </button>
+                  ))
+                )}
+              </div>
+
+              {notifications.length > 0 && (
+                <div className="p-2 border-t border-slate-100 bg-slate-50/50 text-center shrink-0">
+                  <span className="text-[10px] font-semibold text-slate-400">
+                    Timestamps shown in Indian Standard Time (IST)
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>,
+          document.body
+        )}
     </div>
   );
 }
