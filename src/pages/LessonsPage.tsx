@@ -5,6 +5,34 @@ import { Lesson, Category, LessonCardProgress } from '../types/database';
 import { formatISTDate, formatLessonDisplayDate } from '../lib/dateUtils';
 import { BookOpen, Search, ArrowRight, Loader2, Calendar, Sparkles, CheckCircle2, Lock, Clock } from 'lucide-react';
 
+function getOrdinalStage(n: number) {
+  if (n === 1) return '1st';
+  if (n === 2) return '2nd';
+  if (n === 3) return '3rd';
+  return `${n}th`;
+}
+
+function formatRemainingTime(targetDateStr?: string | null): string {
+  if (!targetDateStr) return '';
+  const target = new Date(targetDateStr).getTime();
+  const now = Date.now();
+  const diffMs = target - now;
+  if (diffMs <= 0) return 'Ready';
+
+  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+  const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+
+  if (diffHours >= 24) {
+    const days = Math.floor(diffHours / 24);
+    const remHours = diffHours % 24;
+    return `${days}d ${remHours}h`;
+  }
+  if (diffHours > 0) {
+    return `${diffHours}h ${diffMins}m`;
+  }
+  return `${Math.max(1, diffMins)}m`;
+}
+
 export default function LessonsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const currentCategorySlug = searchParams.get('category') || 'all';
@@ -185,10 +213,36 @@ export default function LessonsPage() {
               >
                 <div className="space-y-3">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-brand-50 text-brand-700 truncate max-w-[180px]">
-                      <span>{catIcon}</span>
-                      <span className="truncate">{catName}</span>
-                    </span>
+                    {requiresRevision ? (
+                      isCompleted ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                          <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                          <span>All {maxStages} Reads Done</span>
+                        </span>
+                      ) : isDue ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-100 text-amber-800 border border-amber-200">
+                          <Clock className="w-3 h-3 text-amber-600" />
+                          <span>{getOrdinalStage(currentStage + 1)} Read Ready</span>
+                        </span>
+                      ) : currentStage > 0 && !prog?.is_unlocked && prog?.next_unlock_at ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200">
+                          <Lock className="w-3 h-3 text-slate-400" />
+                          <span>
+                            {getOrdinalStage(currentStage + 1)} Read in {formatRemainingTime(prog.next_unlock_at)}
+                          </span>
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-brand-50 text-brand-700 border border-brand-100">
+                          <BookOpen className="w-3 h-3 text-brand-600" />
+                          <span>1st Read Ready</span>
+                        </span>
+                      )
+                    ) : (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-brand-50 text-brand-700 truncate max-w-[180px]">
+                        <span>{catIcon}</span>
+                        <span className="truncate">{catName}</span>
+                      </span>
+                    )}
                     <span className="text-[11px] text-slate-400 font-mono flex items-center gap-1 shrink-0">
                       <Calendar className="w-3 h-3" />
                       <span>{formatLessonDisplayDate(lesson)}</span>

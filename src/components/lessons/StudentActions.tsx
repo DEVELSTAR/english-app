@@ -182,7 +182,7 @@ export default function StudentActions({ lessonId, lessonContent, lessonTitle }:
             >
               <Lock className="w-3.5 h-3.5 text-slate-400" />
               <span>
-                🔒 {nextStageOrdinal} Read (Unlocks in {formatRemainingTime(nextUnlockAt)})
+                {nextStageOrdinal} Read (Unlocks in {formatRemainingTime(nextUnlockAt)})
               </span>
             </button>
           ) : (
