@@ -205,8 +205,23 @@ export default function Navbar() {
             )}
           </div>
 
-          {/* Mobile Action: Notification Bell (for students) & Profile Avatar */}
+          {/* Mobile Action: Position Badge, Notification Bell (for students) & Profile Avatar */}
           <div className="flex md:hidden items-center gap-2">
+            {isStudent && (
+              <Link
+                to="/leaderboard"
+                title="View Class Leaderboard & Competition"
+                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-extrabold border transition ${
+                  location.pathname === '/leaderboard'
+                    ? 'bg-amber-100 text-amber-800 border-amber-300 shadow-2xs'
+                    : 'bg-amber-50/70 text-amber-800 border-amber-200 hover:bg-amber-100 hover:border-amber-300'
+                }`}
+              >
+                <Trophy className="w-3.5 h-3.5 text-amber-500" />
+                <span>{formatPosition(userRank)}</span>
+              </Link>
+            )}
+
             {isStudent && <NotificationBell />}
 
             {currentUser ? (
