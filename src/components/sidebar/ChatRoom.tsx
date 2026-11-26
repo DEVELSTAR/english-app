@@ -258,18 +258,24 @@ export default function ChatRoom({ lesson, onCommentCountChange }: ChatRoomProps
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="flex items-center gap-1.5">
-          <input
-            type="text"
+        <form onSubmit={handleSubmit} className="flex items-end gap-1.5">
+          <textarea
+            rows={2}
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            placeholder={replyingTo ? "Write your reply..." : "Ask a question or share a sentence..."}
-            className="flex-1 px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:border-brand-600 focus:ring-1 focus:ring-brand-600 transition"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                e.currentTarget.form?.requestSubmit();
+              }
+            }}
+            placeholder={replyingTo ? "Write your reply..." : "Ask a question or share a sentence... (Shift+Enter for new line)"}
+            className="flex-1 px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:border-brand-600 focus:ring-1 focus:ring-brand-600 transition resize-none leading-relaxed"
           />
           <button
             type="submit"
             disabled={!content.trim() || isSubmitting}
-            className="p-2 rounded-xl bg-brand-600 text-white hover:bg-brand-700 disabled:opacity-50 transition cursor-pointer"
+            className="p-2.5 rounded-xl bg-brand-600 text-white hover:bg-brand-700 disabled:opacity-50 transition cursor-pointer shrink-0"
           >
             <Send className="w-4 h-4" />
           </button>
