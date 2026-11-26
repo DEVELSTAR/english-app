@@ -276,6 +276,9 @@ export const api = {
   markAllNotificationsRead: () =>
     request<{ success: boolean }>('/api/notifications/read-all', { method: 'PUT' }),
 
+  clearAllNotifications: () =>
+    request<{ success: boolean }>('/api/notifications', { method: 'DELETE' }),
+
   // History
   getHistory: (options?: { user_id?: string; resource_type?: string; action?: string; search?: string }) => {
     const params = new URLSearchParams();

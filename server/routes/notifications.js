@@ -73,4 +73,15 @@ router.put('/read-all', requireAuth, async (req, res) => {
   }
 });
 
+// 4. Clear all notifications for current user
+router.delete('/', requireAuth, async (req, res) => {
+  try {
+    await pool.query('DELETE FROM notifications WHERE user_id = ?', [req.user.id]);
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Clear notifications error:', err);
+    res.status(500).json({ error: 'Failed to clear notifications.' });
+  }
+});
+
 export default router;

@@ -15,6 +15,7 @@ export default function NotificationBell() {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isMarkingAll, setIsMarkingAll] = useState(false);
+  const [isClearingAll, setIsClearingAll] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const loadNotifications = async () => {
@@ -106,12 +107,27 @@ export default function NotificationBell() {
     }
   };
 
+  const handleClearAll = async () => {
+    setIsClearingAll(true);
+    try {
+      await api.clearAllNotifications();
+      setNotifications([]);
+      setUnreadCount(0);
+    } catch (err) {
+      console.error('Failed to clear notifications:', err);
+    } finally {
+      setIsClearingAll(false);
+    }
+  };
+
   if (!currentUser) return null;
 
   const getTypeIcon = (type: string) => {
     switch (type) {
       case 'lesson_added':
         return <span className="text-base">🚀</span>;
+      case 'revision_due':
+        return <span className="text-base">⏰</span>;
       case 'note_reaction':
         return <span className="text-base">❤️</span>;
       case 'comment_reaction':
@@ -155,16 +171,28 @@ export default function NotificationBell() {
               )}
             </div>
 
-            {unreadCount > 0 && (
-              <button
-                type="button"
-                onClick={handleMarkAllRead}
-                disabled={isMarkingAll}
-                className="text-[11px] font-bold text-brand-600 hover:text-brand-800 disabled:opacity-50 transition cursor-pointer px-2 py-1 rounded-lg hover:bg-brand-50"
-              >
-                {isMarkingAll ? 'Marking...' : 'Mark all read'}
-              </button>
-            )}
+            <div className="flex items-center gap-1">
+              {unreadCount > 0 && (
+                <button
+                  type="button"
+                  onClick={handleMarkAllRead}
+                  disabled={isMarkingAll}
+                  className="text-[11px] font-bold text-brand-600 hover:text-brand-800 disabled:opacity-50 transition cursor-pointer px-2 py-1 rounded-lg hover:bg-brand-50"
+                >
+                  {isMarkingAll ? 'Marking...' : 'Mark read'}
+                </button>
+              )}
+              {notifications.length > 0 && (
+                <button
+                  type="button"
+                  onClick={handleClearAll}
+                  disabled={isClearingAll}
+                  className="text-[11px] font-bold text-rose-600 hover:text-rose-800 disabled:opacity-50 transition cursor-pointer px-2 py-1 rounded-lg hover:bg-rose-50"
+                >
+                  {isClearingAll ? 'Clearing...' : 'Clear all'}
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Notifications List (Scrollable) */}
@@ -234,7 +262,7 @@ export default function NotificationBell() {
               className="fixed inset-0 bg-slate-900/50 backdrop-blur-2xs z-50 animate-in fade-in duration-200"
               onClick={() => setIsOpen(false)}
             />
-            <div className="fixed inset-x-3 bottom-3 max-h-[80dvh] bg-white rounded-3xl shadow-2xl border border-slate-200/90 z-50 flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-3 duration-200">
+            <div className="fixed inset-x-3 top-[68px] bottom-3 bg-white rounded-3xl shadow-2xl border border-slate-200/90 z-50 flex flex-col overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
               <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between bg-slate-50/70 shrink-0">
                 <div className="flex items-center gap-2">
                   <h3 className="text-sm font-extrabold text-slate-900">Notifications</h3>
@@ -245,7 +273,7 @@ export default function NotificationBell() {
                   )}
                 </div>
 
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1">
                   {unreadCount > 0 && (
                     <button
                       type="button"
@@ -253,13 +281,23 @@ export default function NotificationBell() {
                       disabled={isMarkingAll}
                       className="text-[11px] font-bold text-brand-600 hover:text-brand-800 disabled:opacity-50 transition cursor-pointer px-2 py-1 rounded-lg hover:bg-brand-50"
                     >
-                      {isMarkingAll ? 'Marking...' : 'Mark all read'}
+                      {isMarkingAll ? 'Marking...' : 'Mark read'}
+                    </button>
+                  )}
+                  {notifications.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={handleClearAll}
+                      disabled={isClearingAll}
+                      className="text-[11px] font-bold text-rose-600 hover:text-rose-800 disabled:opacity-50 transition cursor-pointer px-2 py-1 rounded-lg hover:bg-rose-50"
+                    >
+                      {isClearingAll ? 'Clearing...' : 'Clear all'}
                     </button>
                   )}
                   <button
                     type="button"
                     onClick={() => setIsOpen(false)}
-                    className="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center transition cursor-pointer"
+                    className="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center transition cursor-pointer ml-1"
                     aria-label="Close"
                   >
                     <X className="w-4 h-4" />
