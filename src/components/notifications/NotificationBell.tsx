@@ -17,6 +17,7 @@ export default function NotificationBell() {
   const [isMarkingAll, setIsMarkingAll] = useState(false);
   const [isClearingAll, setIsClearingAll] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const mobileSheetRef = useRef<HTMLDivElement>(null);
 
   const loadNotifications = async () => {
     if (!currentUser) return;
@@ -43,7 +44,10 @@ export default function NotificationBell() {
   // Handle outside click to close dropdown
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      const target = event.target as Node;
+      const inDesktop = dropdownRef.current && dropdownRef.current.contains(target);
+      const inMobile = mobileSheetRef.current && mobileSheetRef.current.contains(target);
+      if (!inDesktop && !inMobile) {
         setIsOpen(false);
       }
     }
@@ -262,7 +266,10 @@ export default function NotificationBell() {
               className="fixed inset-0 bg-slate-900/50 backdrop-blur-2xs z-50 animate-in fade-in duration-200"
               onClick={() => setIsOpen(false)}
             />
-            <div className="fixed inset-x-3 top-[68px] bottom-3 bg-white rounded-3xl shadow-2xl border border-slate-200/90 z-50 flex flex-col overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+            <div
+              ref={mobileSheetRef}
+              className="fixed inset-x-3 top-[68px] bottom-3 bg-white rounded-3xl shadow-2xl border border-slate-200/90 z-50 flex flex-col overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200"
+            >
               <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between bg-slate-50/70 shrink-0">
                 <div className="flex items-center gap-2">
                   <h3 className="text-sm font-extrabold text-slate-900">Notifications</h3>
