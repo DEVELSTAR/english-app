@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
 import { Lesson, CategoryProgress, ProgressSummary } from '../types/database';
 import { formatLessonDisplayDate } from '../lib/dateUtils';
-import { Sparkles, ArrowRight, Loader2, Award, Clock, BookOpen } from 'lucide-react';
+import { Sparkles, ArrowRight, Loader2, Award, Clock, BookOpen, Trophy } from 'lucide-react';
 import CategoryPerformanceCard from '../components/home/CategoryPerformanceCard';
 import PrivateTutorCard from '../components/home/PrivateTutorCard';
 
@@ -172,6 +172,15 @@ export default function HomePage() {
                   </span>
                 </div>
               )}
+
+              <Link
+                to="/leaderboard"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-200 text-xs font-bold text-amber-800 hover:bg-amber-100 transition"
+              >
+                <Trophy className="w-3.5 h-3.5 text-amber-500" />
+                <span>Class Leaderboard</span>
+                <ArrowRight className="w-3 h-3" />
+              </Link>
             </div>
           )}
         </div>

@@ -4,6 +4,7 @@ import {
   LessonCardProgress,
   AdminStudentProgressSummary,
   AdminStudentProgressDetail,
+  LeaderboardResponse,
 } from '../types/database';
 
 // API client talking to Express /api backend
@@ -185,6 +186,11 @@ export const api = {
 
   getAdminStudentProgressDetail: (studentId: number) =>
     request<AdminStudentProgressDetail>(`/api/progress/admin/students/${studentId}`),
+
+  getLeaderboard: (categoryId?: number) => {
+    const query = categoryId ? `?category_id=${categoryId}` : '';
+    return request<LeaderboardResponse>(`/api/progress/leaderboard${query}`);
+  },
 
   // Comments
   getComments: (lessonId: number) => request<any[]>(`/api/lessons/${lessonId}/comments`),

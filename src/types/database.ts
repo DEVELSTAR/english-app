@@ -149,6 +149,30 @@ export interface AdminStudentProgressDetail {
   }[];
 }
 
+export interface LeaderboardEntry {
+  rank: number;
+  id: number;
+  name: string;
+  profile_icon: string;
+  is_current_user: boolean;
+  overall_percentage: number;
+  completed_reads: number;
+  total_possible_reads: number;
+  completed_lessons: number;
+  in_progress_lessons: number;
+  total_lessons: number;
+  notes_count: number;
+  comments_count: number;
+  last_activity_at?: string | null;
+}
+
+export interface LeaderboardResponse {
+  leaderboard: LeaderboardEntry[];
+  categories: Pick<Category, 'id' | 'name' | 'slug' | 'icon'>[];
+  current_user_rank: number | null;
+  total_students: number;
+}
+
 export interface LessonCompletion {
   id: number;
   user_id: number;

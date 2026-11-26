@@ -31,3 +31,4 @@ backups/
 akibdemo_*.sql
 scripts/
 DEPLOYMENT.md
+run-this-project.md

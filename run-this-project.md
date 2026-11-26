@@ -82,3 +82,8 @@ If you want cPanel to automatically back up your database every night at 2:00 AM
    ```bash
    mysqldump -u akibdemo_english -p'YOUR_DB_PASSWORD' akibdemo_english > ~/english-app/backups/auto_backup_$(date +\%F).sql
    ```
+
+
+
+cd ~/english-app
+pkill -f node

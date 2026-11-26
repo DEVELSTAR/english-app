@@ -13,6 +13,7 @@ import {
   Sparkles,
   LogIn,
   UserPlus,
+  Trophy,
 } from 'lucide-react';
 
 export default function Navbar() {
@@ -70,6 +71,20 @@ export default function Navbar() {
 
           {/* Desktop Right Header: Profile / Auth Actions */}
           <div className="hidden md:flex items-center gap-3">
+            {isStudent && (
+              <Link
+                to="/leaderboard"
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border transition ${
+                  location.pathname === '/leaderboard'
+                    ? 'bg-amber-50 text-amber-700 border-amber-300 shadow-2xs'
+                    : 'bg-white text-slate-600 border-slate-200 hover:border-amber-300 hover:text-amber-700'
+                }`}
+              >
+                <Trophy className="w-3.5 h-3.5 text-amber-500" />
+                <span>Leaderboard</span>
+              </Link>
+            )}
+
             {/* Notification bell for students only (admins don't need notifications) */}
             {isStudent && <NotificationBell />}
 
@@ -271,6 +286,18 @@ export default function Navbar() {
                         <span className="flex items-center gap-2">
                           <FileText className="w-3.5 h-3.5 text-brand-600" />
                           <span>My Study Notes</span>
+                        </span>
+                        <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+                      </Link>
+
+                      <Link
+                        to="/leaderboard"
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="w-full py-2 px-3 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-700 hover:border-amber-300 hover:text-amber-700 transition flex items-center justify-between shadow-2xs"
+                      >
+                        <span className="flex items-center gap-2">
+                          <Trophy className="w-3.5 h-3.5 text-amber-500" />
+                          <span>Class Leaderboard</span>
                         </span>
                         <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
                       </Link>

@@ -457,4 +457,158 @@ router.get('/admin/students/:studentId', requireAdmin, async (req, res) => {
   }
 });
 
+// 5. Student Leaderboard & Competition Chart (safe public/student view without emails/passwords)
+router.get('/leaderboard', requireAuth, async (req, res) => {
+  try {
+    const { category_id } = req.query;
+    const filterCatId = category_id ? parseInt(String(category_id), 10) : null;
+
+    const [categories] = await pool.query(
+      `SELECT id, name, slug, icon FROM categories ORDER BY id ASC`
+    );
+
+    const [students] = await pool.query(
+      `SELECT id, name, profile_icon
+       FROM users
+       WHERE (role IS NULL OR role NOT IN (1, 2))
+       ORDER BY name ASC`
+    );
+
+    let lessonsSql = `
+      SELECT id, category_id, requires_revision, revision_count
+      FROM lessons
+      WHERE status = 1 AND requires_revision != 0
+    `;
+    const lessonParams = [];
+    if (filterCatId) {
+      lessonsSql += ' AND category_id = ?';
+      lessonParams.push(filterCatId);
+    }
+
+    const [lessons] = await pool.query(lessonsSql, lessonParams);
+
+    const totalLessons = lessons.length;
+    const lessonMaxMap = new Map();
+    let totalPossibleReads = 0;
+
+    for (const l of lessons) {
+      const maxStages = l.revision_count || 4;
+      lessonMaxMap.set(l.id, maxStages);
+      totalPossibleReads += maxStages;
+    }
+
+    const [revisions] = await pool.query(
+      `SELECT user_id, lesson_id, current_stage, is_fully_completed, updated_at
+       FROM student_lesson_revisions`
+    );
+
+    const [completions] = await pool.query(
+      `SELECT user_id, lesson_id, updated_at
+       FROM lesson_completions
+       WHERE completed = 1`
+    );
+
+    const [notesCounts] = await pool.query(
+      `SELECT user_id, COUNT(*) as cnt FROM notes GROUP BY user_id`
+    );
+    const notesMap = new Map(notesCounts.map((r) => [r.user_id, Number(r.cnt)]));
+
+    const [commentsCounts] = await pool.query(
+      `SELECT user_id, COUNT(*) as cnt FROM lesson_comments GROUP BY user_id`
+    );
+    const commentsMap = new Map(commentsCounts.map((r) => [r.user_id, Number(r.cnt)]));
+
+    const entries = students.map((student) => {
+      const studentRevs = revisions.filter(
+        (r) => r.user_id === student.id && lessonMaxMap.has(r.lesson_id)
+      );
+      const revLessonIds = new Set(studentRevs.map((r) => r.lesson_id));
+      const studentLegacyComps = completions.filter(
+        (c) => c.user_id === student.id && lessonMaxMap.has(c.lesson_id) && !revLessonIds.has(c.lesson_id)
+      );
+
+      let completedReads = 0;
+      let completedLessons = 0;
+      let inProgressLessons = 0;
+      let lastActivityAt = null;
+
+      for (const rev of studentRevs) {
+        const maxStages = lessonMaxMap.get(rev.lesson_id) || 4;
+        const stage = Math.min(rev.current_stage || 0, maxStages);
+        completedReads += stage;
+
+        if (rev.is_fully_completed || stage >= maxStages) {
+          completedLessons++;
+        } else if (stage > 0) {
+          inProgressLessons++;
+        }
+
+        if (rev.updated_at && (!lastActivityAt || new Date(rev.updated_at) > new Date(lastActivityAt))) {
+          lastActivityAt = rev.updated_at;
+        }
+      }
+
+      for (const comp of studentLegacyComps) {
+        const maxStages = lessonMaxMap.get(comp.lesson_id) || 4;
+        completedReads += 1;
+        if (maxStages <= 1) {
+          completedLessons++;
+        } else {
+          inProgressLessons++;
+        }
+        if (comp.updated_at && (!lastActivityAt || new Date(comp.updated_at) > new Date(lastActivityAt))) {
+          lastActivityAt = comp.updated_at;
+        }
+      }
+
+      const overallPercentage = totalPossibleReads > 0
+        ? Math.min(100, Math.round((completedReads / totalPossibleReads) * 100))
+        : 0;
+
+      return {
+        id: student.id,
+        name: student.name,
+        profile_icon: student.profile_icon || 'user',
+        is_current_user: student.id === req.user.id,
+        overall_percentage: overallPercentage,
+        completed_reads: completedReads,
+        total_possible_reads: totalPossibleReads,
+        completed_lessons: completedLessons,
+        in_progress_lessons: inProgressLessons,
+        total_lessons: totalLessons,
+        notes_count: notesMap.get(student.id) || 0,
+        comments_count: commentsMap.get(student.id) || 0,
+        last_activity_at: lastActivityAt,
+      };
+    });
+
+    entries.sort((a, b) => {
+      if (b.completed_reads !== a.completed_reads) return b.completed_reads - a.completed_reads;
+      if (b.overall_percentage !== a.overall_percentage) return b.overall_percentage - a.overall_percentage;
+      if (b.completed_lessons !== a.completed_lessons) return b.completed_lessons - a.completed_lessons;
+      const bEngage = b.notes_count + b.comments_count;
+      const aEngage = a.notes_count + a.comments_count;
+      if (bEngage !== aEngage) return bEngage - aEngage;
+      return a.name.localeCompare(b.name);
+    });
+
+    const leaderboard = entries.map((entry, idx) => ({
+      rank: idx + 1,
+      ...entry,
+    }));
+
+    const currentUserEntry = leaderboard.find((e) => e.is_current_user) || null;
+
+    res.json({
+      leaderboard,
+      categories,
+      current_user_rank: currentUserEntry?.rank || null,
+      total_students: leaderboard.length,
+    });
+  } catch (err) {
+    console.error('Fetch leaderboard error:', err);
+    res.status(500).json({ error: 'Failed to fetch leaderboard.' });
+  }
+});
+
 export default router;
