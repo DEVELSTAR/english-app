@@ -69,13 +69,14 @@ router.get('/categories', requireAuth, async (req, res) => {
           const currentStage = rev.current_stage || 0;
           completedReads += Math.min(currentStage, maxStages);
 
-          if (rev.is_fully_completed || currentStage >= maxStages) {
+          const isLessonCompleted = Boolean(rev.is_fully_completed || currentStage >= maxStages);
+          if (isLessonCompleted) {
             completedLessons++;
           } else if (currentStage > 0) {
             inProgressLessons++;
           }
 
-          if (!rev.is_fully_completed && rev.next_unlock_at) {
+          if (!isLessonCompleted && rev.next_unlock_at) {
             const unlockDate = new Date(rev.next_unlock_at);
             if (unlockDate <= now && currentStage > 0) {
               revisionsDueCount++;

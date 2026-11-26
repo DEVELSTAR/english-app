@@ -22,7 +22,10 @@ export async function checkAndNotifyDueRevisions(userId) {
        FROM student_lesson_revisions r
        JOIN lessons l ON r.lesson_id = l.id
        WHERE r.user_id = ?
+         AND l.status = 1
+         AND l.requires_revision != 0
          AND r.is_fully_completed = 0
+         AND r.current_stage < COALESCE(l.revision_count, 4)
          AND r.next_unlock_at IS NOT NULL
          AND r.next_unlock_at <= NOW()
          AND (r.notified_unlock_stage IS NULL OR r.notified_unlock_stage < r.current_stage + 1)`,
