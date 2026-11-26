@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getProfileIconMeta } from '../lib/profileIcons';
+import { api } from '../services/api';
 import NotificationBell from './notifications/NotificationBell';
 import {
   FileText,
@@ -22,6 +23,27 @@ export default function Navbar() {
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [userRank, setUserRank] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!isStudent) {
+      setUserRank(null);
+      return;
+    }
+    api.getLeaderboard()
+      .then((res) => setUserRank(res.current_user_rank))
+      .catch(() => {});
+  }, [isStudent, location.pathname]);
+
+  const formatPosition = (rank: number | null) => {
+    if (!rank) return 'Position';
+    const mod100 = rank % 100;
+    if (mod100 >= 11 && mod100 <= 13) return `${rank}th`;
+    if (rank % 10 === 1) return `${rank}st`;
+    if (rank % 10 === 2) return `${rank}nd`;
+    if (rank % 10 === 3) return `${rank}rd`;
+    return `${rank}th`;
+  };
 
   // Close menus on route change
   useEffect(() => {
@@ -74,14 +96,15 @@ export default function Navbar() {
             {isStudent && (
               <Link
                 to="/leaderboard"
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border transition ${
+                title="View Class Leaderboard & Competition"
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-extrabold border transition ${
                   location.pathname === '/leaderboard'
-                    ? 'bg-amber-50 text-amber-700 border-amber-300 shadow-2xs'
-                    : 'bg-white text-slate-600 border-slate-200 hover:border-amber-300 hover:text-amber-700'
+                    ? 'bg-amber-100 text-amber-800 border-amber-300 shadow-2xs'
+                    : 'bg-amber-50/70 text-amber-800 border-amber-200 hover:bg-amber-100 hover:border-amber-300'
                 }`}
               >
                 <Trophy className="w-3.5 h-3.5 text-amber-500" />
-                <span>Leaderboard</span>
+                <span>{formatPosition(userRank)}</span>
               </Link>
             )}
 
@@ -297,7 +320,7 @@ export default function Navbar() {
                       >
                         <span className="flex items-center gap-2">
                           <Trophy className="w-3.5 h-3.5 text-amber-500" />
-                          <span>Class Leaderboard</span>
+                          <span>Position: {formatPosition(userRank)}</span>
                         </span>
                         <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
                       </Link>
