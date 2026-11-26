@@ -268,7 +268,7 @@ export default function NotificationBell() {
             />
             <div
               ref={mobileSheetRef}
-              className="fixed inset-x-3 top-[68px] bottom-3 bg-white rounded-3xl shadow-2xl border border-slate-200/90 z-50 flex flex-col overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200"
+              className="fixed inset-x-3 top-[68px] max-h-[calc(100dvh-84px)] bg-white rounded-3xl shadow-2xl border border-slate-200/90 z-50 flex flex-col overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200"
             >
               <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between bg-slate-50/70 shrink-0">
                 <div className="flex items-center gap-2">
